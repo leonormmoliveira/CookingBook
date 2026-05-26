@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonBackButton, IonButtons, IonInput, IonTextarea, IonButton, IonSelect, IonSelectOption } from '@ionic/react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 
 function CreateRecipePage() {
-  const navigate = useNavigate();
+  const history = useHistory();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -13,7 +13,7 @@ function CreateRecipePage() {
   const handleSubmit = () => {
     // TODO: Send to API
     alert('Receita criada com sucesso!');
-    navigate('/');
+    history.push('/');
   };
 
   return (
@@ -81,7 +81,7 @@ function CreateRecipePage() {
 
           <div className="flex gap-2">
             <IonButton className="custom-btn flex-1" onClick={handleSubmit}>Guardar</IonButton>
-            <IonButton className="custom-btn-secondary flex-1" onClick={() => navigate('/')}>Cancelar</IonButton>
+            <IonButton className="custom-btn-secondary flex-1" onClick={() => history.push('/')}>Cancelar</IonButton>
           </div>
         </form>
       </IonContent>

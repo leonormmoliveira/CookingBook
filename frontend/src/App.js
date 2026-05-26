@@ -1,7 +1,7 @@
 import React from 'react';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { Route, Routes } from 'react-router-dom';
+import { Route } from 'react-router-dom';
 
 import './index.css';
 
@@ -19,14 +19,12 @@ function App() {
     <IonApp>
       <IonReactRouter>
         <IonRouterOutlet>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/recipe/:id" element={<RecipeDetailPage />} />
-            <Route path="/create" element={<CreateRecipePage />} />
-            <Route path="/categories" element={<CategoriesPage />} />
-            <Route path="/favorites" element={<FavoritesPage />} />
-            <Route path="/video-analysis" element={<VideoAnalysisPage />} />
-          </Routes>
+          <Route path="/" component={HomePage} exact />
+          <Route path="/recipe/:id" component={RecipeDetailPage} />
+          <Route path="/create" component={CreateRecipePage} />
+          <Route path="/categories" component={CategoriesPage} />
+          <Route path="/favorites" component={FavoritesPage} />
+          <Route path="/video-analysis" component={VideoAnalysisPage} />
         </IonRouterOutlet>
       </IonReactRouter>
     </IonApp>
