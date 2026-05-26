@@ -10,7 +10,7 @@ function RecipeDetailPage() {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/" />
+            <IonBackButton defaultHref="/home" />
           </IonButtons>
           <IonTitle>Detalhes da Receita</IonTitle>
           <IonButtons slot="end">

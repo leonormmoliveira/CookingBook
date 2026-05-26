@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonBackButton, IonButtons, IonInput, IonTextarea, IonButton, IonSelect, IonSelectOption } from '@ionic/react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 function CreateRecipePage() {
-  const history = useHistory();
+  const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -13,7 +13,7 @@ function CreateRecipePage() {
   const handleSubmit = () => {
     // TODO: Send to API
     alert('Receita criada com sucesso!');
-    history.push('/');
+    navigate('/home');
   };
 
   return (
@@ -21,7 +21,7 @@ function CreateRecipePage() {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/" />
+            <IonBackButton defaultHref="/home" />
           </IonButtons>
           <IonTitle>Criar Nova Receita</IonTitle>
         </IonToolbar>
@@ -81,7 +81,7 @@ function CreateRecipePage() {
 
           <div className="flex gap-2">
             <IonButton className="custom-btn flex-1" onClick={handleSubmit}>Guardar</IonButton>
-            <IonButton className="custom-btn-secondary flex-1" onClick={() => history.push('/')}>Cancelar</IonButton>
+            <IonButton className="custom-btn-secondary flex-1" onClick={() => navigate('/home')}>Cancelar</IonButton>
           </div>
         </form>
       </IonContent>
