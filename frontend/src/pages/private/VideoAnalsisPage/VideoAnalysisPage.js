@@ -25,7 +25,7 @@ function VideoAnalysisPage() {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/" />
+            <IonBackButton defaultHref="/home" />
           </IonButtons>
           <IonTitle>Analisar Vídeo</IonTitle>
         </IonToolbar>

@@ -1,0 +1,24 @@
+{
+  "dependencies": {
+    "@ionic/react": "^8.8.8",
+    "@ionic/react-router": "^8.8.8",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "axios": "^1.16.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "firebase": "^12.13.0",
+    "firebase-admin": "^13.10.0",
+    "ionicons": "^8.0.13",
+    "js-cookie": "^3.0.7",
+    "mysql2": "^3.22.3",
+    "nodemailer": "^8.0.8",
+    "nodemon": "^3.1.14",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-router-dom": "^7.15.1",
+    "react-scripts": "^5.0.1",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,19 +1,38 @@
-const jwt = require('jsonwebtoken');
+const admin = require("firebase-admin")
+const pool = require("../config/database")
 
-const authMiddleware = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
+if (!admin.apps.length) {
+    const serviceAccount = require("../config/firebase-service-account.json")
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+    })
+}
 
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
+const verifyToken = async (req, res, next) => {
+    try {
+        let token = null
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(403).json({ error: 'Invalid or expired token' });
-  }
-};
+        if (req.headers.authorization?.startsWith("Bearer")) {
+            token = req.headers.authorization.split(" ")[1]
+        }
 
-module.exports = authMiddleware;
+        if (!token) {
+            return res.status(401).json({ message: "Não autorizado" })
+        }
+
+        const decoded = await admin.auth().verifyIdToken(token)
+        const [rows] = await pool.query('SELECT * FROM users WHERE authUid = ?', [decoded.uid])
+        const user = rows[0]
+
+        if (!user) {
+            return res.status(401).json({ message: "Usuário não encontrado" })
+        }
+
+        req.user = user
+        next()
+    } catch (error) {
+        return res.status(401).json({ message: "Token inválido" })
+    }
+}
+
+module.exports = verifyToken

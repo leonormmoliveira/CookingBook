@@ -13,7 +13,7 @@ function CreateRecipePage() {
   const handleSubmit = () => {
     // TODO: Send to API
     alert('Receita criada com sucesso!');
-    navigate('/');
+    navigate('/home');
   };
 
   return (
@@ -21,7 +21,7 @@ function CreateRecipePage() {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/" />
+            <IonBackButton defaultHref="/home" />
           </IonButtons>
           <IonTitle>Criar Nova Receita</IonTitle>
         </IonToolbar>
@@ -81,7 +81,7 @@ function CreateRecipePage() {
 
           <div className="flex gap-2">
             <IonButton className="custom-btn flex-1" onClick={handleSubmit}>Guardar</IonButton>
-            <IonButton className="custom-btn-secondary flex-1" onClick={() => navigate('/')}>Cancelar</IonButton>
+            <IonButton className="custom-btn-secondary flex-1" onClick={() => navigate('/home')}>Cancelar</IonButton>
           </div>
         </form>
       </IonContent>

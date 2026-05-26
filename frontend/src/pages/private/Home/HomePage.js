@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonSearchbar, IonGrid, IonRow, IonCol } from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonSearchbar } from '@ionic/react';
 import { Link } from 'react-router-dom';
 
 function HomePage() {
