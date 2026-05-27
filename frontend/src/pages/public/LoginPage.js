@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonInput, IonButton } from '@ionic/react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-
 import { auth } from '../../firebaseConfig.ts';
+
 import authApi from '../../hooks/authApi.tsx';
 
 function LoginPage() {
@@ -17,7 +17,12 @@ function LoginPage() {
   const handleLogin = async () => {
     setError('');
 
-    if (!email || !password) {
+    const trimmedEmail = String(email).trim();
+
+    console.log('Login attempt for email:', trimmedEmail);
+    console.log('Firebase auth object:', auth);
+
+    if (!trimmedEmail || !password) {
       setError('Preencha o e-mail e a senha.');
       return;
     }
@@ -25,7 +30,7 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, trimmedEmail, password);
       const idToken = await userCredential.user.getIdToken();
 
       localStorage.setItem('token', idToken);
@@ -35,8 +40,10 @@ function LoginPage() {
 
       navigate('/home');
     } catch (err) {
+      console.error('Login error:', err);
+      const firebaseCode = err?.code ? ` (${err.code})` : '';
       const message = err?.response?.data?.message || err?.message || 'Não foi possível fazer login.';
-      setError(message);
+      setError(`${message}${firebaseCode}`);
     } finally {
       setLoading(false);
     }

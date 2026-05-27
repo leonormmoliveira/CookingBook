@@ -13,11 +13,25 @@ const AuthController = {
             // Verificar o token no Firebase
             const decoded = await admin.auth().verifyIdToken(idToken);
             // Buscar usuário no MySQL
-            const [rows] = await pool.query('SELECT * FROM users WHERE authUid = ?', [decoded.uid]);
-            const user = rows[0];
+            let [rows] = await pool.query('SELECT * FROM users WHERE authUid = ?', [decoded.uid]);
+            let user = rows[0];
 
+            // Se o usuário existe no Firebase mas não no MySQL, cria um registro básico automaticamente
             if (!user) {
-                return res.status(404).json({success: false, message: 'Usuário não encontrado' });
+                const email = decoded.email || null;
+                const username = email ? email.split('@')[0] : `user_${decoded.uid}`;
+                const name = decoded.name || username;
+                const status = decoded.email_verified ? 'active' : 'pending';
+                const emailVerifiedFlag = decoded.email_verified ? 1 : 0;
+
+                const [insertResult] = await pool.query(
+                    'INSERT INTO users (authUid, username, name, email, status, emailVerified) VALUES (?, ?, ?, ?, ?, ?)',
+                    [decoded.uid, username, name, email, status, emailVerifiedFlag]
+                );
+
+                // Rebuscar usuário recém-criado
+                [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [insertResult.insertId]);
+                user = rows[0];
             }
 
             if (!decoded.email_verified) {
