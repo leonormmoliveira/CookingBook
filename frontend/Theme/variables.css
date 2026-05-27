@@ -1,0 +1,11 @@
+:root {
+  --ion-color-primary: #0066cc;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-background-color: #fafafa;
+  --ion-text-color: #333333;
+  --ion-safe-area-top: 20px;
+}
+
+html, body, #root {
+  height: 100%;
+}
