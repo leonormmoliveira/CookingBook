@@ -19,8 +19,7 @@ function LoginPage() {
 
     const trimmedEmail = String(email).trim();
 
-    console.log('Login attempt for email:', trimmedEmail);
-    console.log('Firebase auth object:', auth);
+    
 
     if (!trimmedEmail || !password) {
       setError('Preencha o e-mail e a senha.');

@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE TABLE IF NOT EXISTS recipes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    category_id INT NOT NULL,
+    category_id INT,
     title VARCHAR(200) NOT NULL,
     description TEXT,
     ingredients LONGTEXT,
