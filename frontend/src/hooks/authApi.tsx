@@ -10,10 +10,15 @@ export interface User {
 
 export const authApi = (Login: (userData: any) => void) => {
   const login = async (idToken: string): Promise<any> => {
-    const { data } = await api.post('/login', { idToken });
-    Login(data.user);
-
-    return data;
+    console.log('authApi baseURL:', api.defaults.baseURL);
+    try {
+      const { data } = await api.post('/login', { idToken });
+      return data;
+    } catch (err) {
+      console.error('authApi.login error', err?.response?.status, err?.response?.data || err);
+      throw err;
+    }
+    
   };
 
   const signup = async (user: User): Promise<any> => {

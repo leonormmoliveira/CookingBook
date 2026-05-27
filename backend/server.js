@@ -7,6 +7,11 @@ const app = express();
 
 // Middleware
 app.use(cors());
+// Log simples de todas as requisições para debugging
+app.use((req, res, next) => {
+  console.log(new Date().toISOString(), req.method, req.originalUrl);
+  next();
+});
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.static('uploads'));
