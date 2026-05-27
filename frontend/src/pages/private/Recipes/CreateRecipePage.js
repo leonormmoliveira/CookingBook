@@ -5,60 +5,44 @@ import api from '../../../components/AxiosInstance';
 
 function CreateRecipePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [ingredients, setIngredients] = useState('');
   const [instructions, setInstructions] = useState('');
-  const [imageBase64, setImageBase64] = useState('');
   const [imageName, setImageName] = useState('');
-  const [categories, setCategories] = useState([]);
+  const [imageBase64, setImageBase64] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const location = useLocation();
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    async function loadCategories() {
-      try {
-        const stored = localStorage.getItem('user');
-        if (!stored) return;
-        const user = JSON.parse(stored);
-        const { data } = await api.get(`/categories?userId=${user.id}`);
-        setCategories(data.categories || []);
-      } catch (err) {
-        console.error('Failed to load categories', err);
-      }
+    const state = location.state;
+    if (state?.analysis?.parsed) {
+      const recipe = state.analysis.parsed;
+      setTitle(recipe.title || '');
+      setDescription(recipe.description || '');
+      setCategory(recipe.category || '');
+      setIngredients(Array.isArray(recipe.ingredients) ? recipe.ingredients.join('\n') : recipe.ingredients || '');
+      setInstructions(Array.isArray(recipe.instructions) ? recipe.instructions.join('\n') : recipe.instructions || '');
     }
+  }, [location.state]);
 
-    loadCategories();
-  }, []);
-
-  // prefill from video analysis navigation
-  useEffect(() => {
-    const analysis = location?.state?.analysis;
-    if (analysis) {
-      if (analysis.parsed) {
-        const a = analysis.parsed;
-        if (a.title) setTitle(a.title);
-        if (a.description) setDescription(a.description);
-        if (a.category) setCategory(a.category);
-        if (Array.isArray(a.ingredients)) setIngredients(a.ingredients.join('\n'));
-        if (Array.isArray(a.instructions)) setInstructions(a.instructions.join('\n'));
-      } else if (analysis.raw) {
-        // if only raw content available, put it into description for manual editing
-        setDescription(analysis.raw);
-      }
-    }
-  }, [location]);
-
-  const handleImageChange = async (event) => {
+  const handleImageChange = (event) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-    setImageName(file.name);
+    if (!file) {
+      setImageName('');
+      setImageBase64('');
+      return;
+    }
 
+    setImageName(file.name);
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setImageBase64(reader.result?.toString() || '');
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setImageBase64(reader.result);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -66,21 +50,27 @@ function CreateRecipePage() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
-    const stored = localStorage.getItem('user');
-    if (!stored) {
-      setError('É preciso fazer login antes de criar uma receita.');
+
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+      setError('Usuário não encontrado. Faça login e tente novamente.');
       return;
     }
 
-    const user = JSON.parse(stored);
+    const user = JSON.parse(storedUser);
+    if (!user?.id) {
+      setError('ID de usuário inválido. Faça login novamente.');
+      return;
+    }
+
     if (!title.trim() || !ingredients.trim() || !instructions.trim()) {
-      setError('Preencha título, ingredientes e modo de preparo.');
+      setError('Título, ingredientes e instruções são obrigatórios.');
       return;
     }
 
+    setLoading(true);
     try {
-      setLoading(true);
-      const payload = {
+      const { data } = await api.post('/recipes', {
         userId: user.id,
         title: title.trim(),
         description: description.trim() || null,
@@ -88,8 +78,8 @@ function CreateRecipePage() {
         ingredients: ingredients.trim(),
         instructions: instructions.trim(),
         imageBase64: imageBase64 || null,
-      };
-      const { data } = await api.post('/recipes', payload);
+      });
+
       if (data.success) {
         navigate('/home');
       } else {
@@ -97,7 +87,7 @@ function CreateRecipePage() {
       }
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.message || 'Erro ao salvar receita.');
+      setError(err?.response?.data?.message || 'Erro ao criar receita.');
     } finally {
       setLoading(false);
     }
@@ -117,14 +107,9 @@ function CreateRecipePage() {
       <IonContent className="p-4 pb-24">
         <div className="max-w-3xl mx-auto space-y-5">
           <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Criar Nova Receita</h2>
-                <p className="text-sm text-gray-600">Preencha os detalhes e adicione uma foto para sua receita.</p>
-              </div>
-              <IonButton className="text-sm" fill="clear" color="medium" onClick={() => navigate('/video-analysis')}>
-                Gerar a partir de vídeo
-              </IonButton>
+            <div>
+              <h2 className="text-2xl font-bold">Criar Nova Receita</h2>
+              <p className="text-sm text-gray-600">Preencha os detalhes e salve no seu livro de receitas.</p>
             </div>
 
             {error && (
