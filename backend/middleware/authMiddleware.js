@@ -1,12 +1,5 @@
-const admin = require("firebase-admin")
+const admin = require("../config/firebase")
 const pool = require("../config/database")
-
-if (!admin.apps.length) {
-    const serviceAccount = require("../config/firebase-service-account.json")
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-    })
-}
 
 const verifyToken = async (req, res, next) => {
     try {
