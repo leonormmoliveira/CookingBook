@@ -12,7 +12,7 @@ function CreateRecipePage() {
   const [ingredients, setIngredients] = useState('');
   const [instructions, setInstructions] = useState('');
   const [imageName, setImageName] = useState('');
-  const [imageBase64, setImageBase64] = useState('');
+  const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [categories, setCategories] = useState([]);
@@ -29,22 +29,54 @@ function CreateRecipePage() {
     }
   }, [location.state]);
 
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) return;
+        const user = JSON.parse(storedUser);
+        if (!user?.id) return;
+        const { data } = await api.get(`/categories?userId=${user.id}`);
+        if (data?.success) setCategories(data.categories || []);
+      } catch (err) {
+        // ignore failure to fetch categories
+      }
+    }
+
+    loadCategories();
+  }, []);
+
+  const handleCreateCategory = async () => {
+    const name = (category || '').trim();
+    if (!name) return;
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) {
+        setError('Faça login para criar categorias.');
+        return;
+      }
+      const user = JSON.parse(storedUser);
+      const { data } = await api.post('/categories', { userId: user.id, name });
+      if (data?.success) {
+        const newCat = data.category;
+        setCategories(prev => [newCat, ...prev.filter(c => c.id !== newCat.id)]);
+        setCategory(newCat.name);
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Erro ao criar categoria.');
+    }
+  };
+
   const handleImageChange = (event) => {
     const file = event.target.files?.[0];
     if (!file) {
       setImageName('');
-      setImageBase64('');
+      setImageFile(null);
       return;
     }
 
     setImageName(file.name);
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setImageBase64(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    setImageFile(file);
   };
 
   const handleSubmit = async (event) => {
@@ -70,15 +102,18 @@ function CreateRecipePage() {
 
     setLoading(true);
     try {
-      const { data } = await api.post('/recipes', {
-        userId: user.id,
-        title: title.trim(),
-        description: description.trim() || null,
-        categoryName: category.trim() || null,
-        ingredients: ingredients.trim(),
-        instructions: instructions.trim(),
-        imageBase64: imageBase64 || null,
-      });
+      const formData = new FormData();
+      formData.append('userId', user.id);
+      formData.append('title', title.trim());
+      formData.append('description', description.trim() || '');
+      formData.append('categoryName', category.trim() || '');
+      formData.append('ingredients', ingredients.trim());
+      formData.append('instructions', instructions.trim());
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+
+      const { data } = await api.post('/recipes', formData);
 
       if (data.success) {
         navigate('/home');
@@ -86,7 +121,6 @@ function CreateRecipePage() {
         setError(data.message || 'Não foi possível criar a receita.');
       }
     } catch (err) {
-      console.error(err);
       setError(err?.response?.data?.message || 'Erro ao criar receita.');
     } finally {
       setLoading(false);
@@ -132,12 +166,17 @@ function CreateRecipePage() {
 
               <div>
                 <label className="block text-sm font-medium mb-2">Categoria (opcional)</label>
-                <div className="bg-gray-50 border border-gray-200 rounded p-2">
-                  <IonInput
-                    value={category}
-                    onIonInput={(e) => setCategory(e.detail.value)}
-                    placeholder="Digite ou escolha uma categoria existente"
-                  />
+                <div className="flex gap-2">
+                  <div className="flex-1 bg-gray-50 border border-gray-200 rounded p-2">
+                    <IonInput
+                      value={category}
+                      onIonInput={(e) => setCategory(e.detail.value)}
+                      placeholder="Digite ou escolha uma categoria existente"
+                    />
+                  </div>
+                  <div>
+                    <button type="button" onClick={handleCreateCategory} className="rounded border px-3 py-2 bg-white text-sm text-gray-700 hover:bg-blue-50">Criar</button>
+                  </div>
                 </div>
                 {categories.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">

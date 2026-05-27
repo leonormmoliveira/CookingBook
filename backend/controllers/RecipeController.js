@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { uploadToCloudinary } = require('../middleware/upload');
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY;
 const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
@@ -150,7 +151,9 @@ const RecipeController = {
   },
 
   createRecipe: async (req, res) => {
-    const { userId, title, description, categoryName, ingredients, instructions, videoUrl, imageUrl, imageBase64, prepTime, cookTime, servings, difficulty } = req.body;
+    const file = req.file;
+    const { userId, title, description, categoryName, ingredients, instructions, videoUrl, imageUrl, prepTime, cookTime, servings, difficulty } = req.body;
+
     if (!userId || !title || !ingredients || !instructions) {
       return res.status(400).json({ success: false, message: 'userId, título, ingredientes e instruções são obrigatórios.' });
     }
@@ -164,6 +167,12 @@ const RecipeController = {
         if (!categoryNullAllowed) {
           categoryId = await findOrCreateCategory(userId, 'Sem categoria');
         }
+      }
+
+      let finalImageUrl = imageUrl || null;
+      if (file && file.buffer) {
+        const uploadResult = await uploadToCloudinary(file.buffer, 'recipes');
+        finalImageUrl = uploadResult.url;
       }
 
       const imageDataColumnExists = await hasColumn('recipes', 'image_data');
@@ -188,7 +197,7 @@ const RecipeController = {
         description?.trim() || null,
         ingredients.trim(),
         instructions.trim(),
-        imageUrl || null,
+        finalImageUrl,
         videoUrl || null,
         prepTime ? Number(prepTime) : null,
         cookTime ? Number(cookTime) : null,
@@ -198,7 +207,7 @@ const RecipeController = {
 
       if (imageDataColumnExists) {
         insertFields.splice(7, 0, 'image_data');
-        insertValues.splice(7, 0, imageBase64 || null);
+        insertValues.splice(7, 0, null);
       }
 
       const placeholders = insertFields.map(() => '?').join(', ');
