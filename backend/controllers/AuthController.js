@@ -108,7 +108,7 @@ const AuthController = {
 
             return res.status(201).json(response);
         } catch (err) {
-            console.log(err);
+        
             if (firebaseUser?.uid) {
                 await admin.auth().deleteUser(firebaseUser.uid);
             }
@@ -132,11 +132,9 @@ const AuthController = {
 
             // Marca emailVerified no Firebase
             const updatedUser = await admin.auth().updateUser(uid, { emailVerified: true });
-            console.log('Firebase updateUser response:', { uid: updatedUser.uid, emailVerified: updatedUser.emailVerified });
 
             // Atualiza MySQL
             const [result] = await pool.query('UPDATE users SET emailVerified = ?, status = ? WHERE authUid = ?', [1, 'active', uid]);
-            console.log('MySQL verifyEmailServer rows affected:', result.affectedRows || result.affected_rows || result.affectedRows);
 
             const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
             return res.redirect(`${frontendUrl}/login?verified=1`);
