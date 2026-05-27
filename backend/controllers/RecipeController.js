@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const axios = require('axios');
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY;
 const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
@@ -69,40 +70,58 @@ function extractJsonFromText(text) {
   }
 }
 
+async function callOpenAI(messages) {
+  try {
+    const response = await axios.post(
+      OPENAI_ENDPOINT,
+      {
+        model: 'gpt-3.5-turbo',
+        messages,
+        temperature: 0.7,
+        max_tokens: 600,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+        },
+        timeout: 20000,
+      }
+    );
+
+    return response.data?.choices?.[0]?.message?.content?.trim();
+  } catch (err) {
+    const status = err.response?.status;
+    const info = err.response?.data?.error?.message || err.response?.data || err.message;
+    throw new Error(`OpenAI request failed${status ? ` (${status})` : ''}: ${info}`);
+  }
+}
+
 async function fetchOpenAIRecipe(videoUrl) {
   if (!OPENAI_API_KEY) {
     throw new Error('OPENAI_API_KEY não configurado no backend.');
   }
 
-  const prompt = `You are a cooking assistant. Given the video URL ${videoUrl}, extract a recipe with the following JSON format only: {"title":"...","description":"...","category":"...","ingredients":["..."],"instructions":["..."],"servings":"...","difficulty":"Fácil|Médio|Difícil"}. Return valid JSON only.`;
+  const basePrompt = `You are a cooking assistant. Given the video URL ${videoUrl}, extract a recipe with the following JSON format only: {"title":"...","description":"...","category":"...","ingredients":["..."],"instructions":["..."],"servings":"...","difficulty":"Fácil|Médio|Difícil"}. Return valid JSON only and nothing else.`;
 
-  const response = await fetch(OPENAI_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are a helpful recipe assistant.' },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 600,
-    }),
-  });
+  const firstContent = await callOpenAI([
+    { role: 'system', content: 'You are a helpful recipe assistant.' },
+    { role: 'user', content: basePrompt },
+  ]);
 
-  const payload = await response.json();
-  const content = payload?.choices?.[0]?.message?.content;
-  const parsed = extractJsonFromText(content || '');
-
+  let parsed = extractJsonFromText(firstContent || '');
   if (parsed) {
-    return { parsed, raw: content };
+    return { parsed, raw: firstContent };
   }
 
-  // if parsing failed, return raw content so frontend can show it and allow manual corrections
-  return { parsed: null, raw: content };
+  const retryPrompt = `The previous response did not contain parseable JSON. Here is the original text: ${firstContent || '[empty response]'}\nPlease return only a valid JSON object with the same keys: title, description, category, ingredients, instructions, servings, difficulty.`;
+  const secondContent = await callOpenAI([
+    { role: 'system', content: 'You are a helpful recipe assistant.' },
+    { role: 'user', content: retryPrompt },
+  ]);
+
+  parsed = extractJsonFromText(secondContent || '');
+  return { parsed: parsed || null, raw: secondContent || firstContent || '' };
 }
 
 const RecipeController = {
@@ -263,6 +282,10 @@ const RecipeController = {
       const result = await fetchOpenAIRecipe(videoUrl.trim());
       const analysisResult = JSON.stringify(result);
       await pool.query('INSERT INTO video_analysis (user_id, video_url, analysis_result) VALUES (?, ?, ?)', [userId, videoUrl.trim(), analysisResult]);
+
+      if (!result.parsed && !result.raw?.trim()) {
+        return res.status(500).json({ success: false, message: 'OpenAI não retornou um resultado de receita válido. Tente novamente.' });
+      }
 
       return res.json({ success: true, result });
     } catch (err) {
