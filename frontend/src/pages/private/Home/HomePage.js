@@ -10,7 +10,6 @@ function HomePage() {
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showVideoAlert, setShowVideoAlert] = useState(false);
-  const [videoUrl, setVideoUrl] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,10 +46,9 @@ function HomePage() {
     setShowVideoAlert(true);
   };
 
-  const submitVideo = () => {
+  const submitVideo = (url) => {
     setShowVideoAlert(false);
-    navigate(`/video-analysis?url=${encodeURIComponent(videoUrl || '')}`);
-    setVideoUrl('');
+    navigate(`/video-analysis?url=${encodeURIComponent(url || '')}`);
   };
 
   const filteredRecipes = recipes.filter((recipe) => {
@@ -226,8 +224,7 @@ function HomePage() {
             {
               text: 'Analisar',
               handler: (data) => {
-                setVideoUrl(data.videoUrl || '');
-                submitVideo();
+                submitVideo(data.videoUrl || '');
               }
             }
           ]}

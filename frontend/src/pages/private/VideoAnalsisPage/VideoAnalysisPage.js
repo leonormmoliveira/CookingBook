@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonBackButton, IonButtons, IonInput, IonButton } from '@ionic/react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../../components/AxiosInstance';
@@ -8,6 +8,7 @@ function VideoAnalysisPage() {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState('');
+  const [autoAnalyzed, setAutoAnalyzed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -17,7 +18,7 @@ function VideoAnalysisPage() {
     if (url) setVideoUrl(url);
   }, [location.search]);
 
-  const handleAnalyzeVideo = async () => {
+  const handleAnalyzeVideo = useCallback(async () => {
     setError('');
     if (!videoUrl) {
       setError('Por favor, insira o URL do vídeo.');
@@ -49,7 +50,14 @@ function VideoAnalysisPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [videoUrl]);
+
+  useEffect(() => {
+    if (videoUrl && !autoAnalyzed) {
+      setAutoAnalyzed(true);
+      handleAnalyzeVideo();
+    }
+  }, [videoUrl, autoAnalyzed, handleAnalyzeVideo]);
 
   return (
     <IonPage>
@@ -92,6 +100,11 @@ function VideoAnalysisPage() {
           >
             {loading ? 'Analisando...' : '🎬 Analisar Vídeo'}
           </IonButton>
+          <div className="mt-3">
+            <IonButton fill="clear" color="medium" onClick={() => navigate('/create')}>
+              Inserir manualmente
+            </IonButton>
+          </div>
 
           {analysis && (
             <div className="bg-white rounded-lg shadow-sm p-4">
