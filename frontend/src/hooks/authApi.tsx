@@ -14,7 +14,7 @@ export const authApi = (Login: (userData: any) => void) => {
     try {
       const { data } = await api.post('/login', { idToken });
       return data;
-    } catch (err) {
+    } catch (err: any) {
       console.error('authApi.login error', err?.response?.status, err?.response?.data || err);
       throw err;
     }
