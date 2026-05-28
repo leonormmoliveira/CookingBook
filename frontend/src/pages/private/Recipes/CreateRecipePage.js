@@ -138,8 +138,8 @@ function CreateRecipePage() {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="p-4 pb-24">
-        <div className="max-w-3xl mx-auto space-y-5">
+      <IonContent className="ion-padding">
+        <div className="max-w-3xl mx-auto space-y-5" style={{ paddingBottom: '100px' }}>
           <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
             <div>
               <h2 className="text-2xl font-bold">Criar Nova Receita</h2>
@@ -227,6 +227,7 @@ function CreateRecipePage() {
                     onIonInput={(e) => setIngredients(e.detail.value)}
                     placeholder="Um ingrediente por linha"
                     rows={5}
+                    autoGrow={true}
                   />
                 </div>
               </div>
@@ -239,6 +240,7 @@ function CreateRecipePage() {
                     onIonInput={(e) => setInstructions(e.detail.value)}
                     placeholder="Instruções passo a passo"
                     rows={5}
+                    autoGrow={true}
                   />
                 </div>
               </div>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonSearchbar, IonFab, IonFabButton, IonIcon, IonModal, IonList, IonItem, IonLabel, IonAlert } from '@ionic/react';
-import { add, heart, heartOutline } from 'ionicons/icons';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonSearchbar, IonFab, IonFabButton, IonIcon, IonModal, IonList, IonItem, IonLabel, IonAlert, IonButtons } from '@ionic/react';
+import { add, heart, heartOutline, logOut } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../components/AxiosInstance';
 import { addFavorite, removeFavorite } from '../../../services/favoriteService';
+import authApi from '../../../hooks/authApi.tsx';
 
 function HomePage() {
   const [searchText, setSearchText] = useState('');
@@ -14,6 +15,18 @@ function HomePage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showVideoAlert, setShowVideoAlert] = useState(false);
   const navigate = useNavigate();
+  const { logout } = authApi(() => {});
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      navigate('/login');
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+  };
 
   useEffect(() => {
     async function loadInitialData() {
@@ -143,6 +156,11 @@ function HomePage() {
       <IonHeader>
         <IonToolbar>
           <IonTitle className="text-2xl font-bold">CookingBook</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={handleLogout} title="Sair">
+              <IonIcon icon={logOut} />
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 

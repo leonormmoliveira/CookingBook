@@ -167,8 +167,8 @@ function RecipeDetailPage() {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent fullscreen className="p-4">
-        <div className="max-w-3xl mx-auto space-y-4">
+      <IonContent className="ion-padding">
+        <div className="max-w-3xl mx-auto space-y-4" style={{ paddingBottom: '100px' }}>
           {loading ? (
             <div className="rounded-lg bg-white p-6 shadow-sm text-center text-gray-500">Carregando receita...</div>
           ) : error ? (
@@ -219,32 +219,42 @@ function RecipeDetailPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">Título</label>
-                      <IonInput value={title} onIonInput={(e) => setTitle(e.detail.value)} placeholder="Título da receita" />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonInput value={title} onIonInput={(e) => setTitle(e.detail.value)} placeholder="Título da receita" />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Categoria</label>
-                      <IonInput value={categoryName} onIonInput={(e) => setCategoryName(e.detail.value)} placeholder="Categoria" />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonInput value={categoryName} onIonInput={(e) => setCategoryName(e.detail.value)} placeholder="Categoria" />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Foto da receita</label>
-                      <input type="file" accept="image/*" onChange={handleImageChange} className="w-full rounded border border-gray-200 bg-white p-2 text-sm" />
+                      <input type="file" accept="image/*" onChange={handleImageChange} className="w-full rounded border border-gray-300 bg-white p-2 text-sm" />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Descrição</label>
-                      <IonTextarea value={description} onIonInput={(e) => setDescription(e.detail.value)} rows={3} />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonTextarea value={description} onIonInput={(e) => setDescription(e.detail.value)} rows={3} />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Ingredientes</label>
-                      <IonTextarea value={ingredients} onIonInput={(e) => setIngredients(e.detail.value)} rows={5} />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonTextarea value={ingredients} onIonInput={(e) => setIngredients(e.detail.value)} rows={5} />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Modo de preparo</label>
-                      <IonTextarea value={instructions} onIonInput={(e) => setInstructions(e.detail.value)} rows={6} />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonTextarea value={instructions} onIonInput={(e) => setInstructions(e.detail.value)} rows={6} />
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-3 sm:flex-row">
