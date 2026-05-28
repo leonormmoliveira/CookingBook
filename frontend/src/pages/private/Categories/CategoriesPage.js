@@ -60,8 +60,8 @@ function CategoriesPage() {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent fullscreen className="p-4">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
+      <IonContent fullscreen scrollY={true} className="ion-padding">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 space-y-6 min-h-full overflow-y-auto">
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="text-2xl font-semibold">Minhas Categorias</h2>
             <p className="text-sm text-gray-500 mt-2">Visualize suas categorias, receitas por categoria e quantos favoritos cada uma tem.</p>
@@ -88,7 +88,7 @@ function CategoriesPage() {
           ) : categories.length === 0 ? (
             <div className="rounded-lg bg-white p-6 shadow-sm text-center text-gray-500">Nenhuma categoria encontrada.</div>
           ) : selectedCategoryName ? (
-            <div className="space-y-6">
+            <div className="space-y-6 overflow-y-auto pb-24">
               <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -104,7 +104,7 @@ function CategoriesPage() {
               {selectedCategoryRecipes.length === 0 ? (
                 <div className="rounded-lg bg-white p-6 shadow-sm text-center text-gray-500">Nenhuma receita encontrada nesta categoria.</div>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 overflow-y-auto">
                   {favoritesFirst(selectedCategoryRecipes).map((recipe) => {
                     const imageSrc = recipe.image_data || recipe.image_url;
                     return (
