@@ -318,6 +318,7 @@ const RecipeController = {
         'r.servings',
         'r.difficulty',
         'r.created_at',
+        'r.user_id AS ownerId',
         'c.id AS categoryId',
         'c.name AS categoryName',
         userId ? 'CASE WHEN f.id IS NULL THEN 0 ELSE 1 END AS isFavorite' : '0 AS isFavorite',

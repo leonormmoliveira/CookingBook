@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonIcon, IonInput, IonTextarea } from '@ionic/react';
-import { arrowBack, heart, heartOutline } from 'ionicons/icons';
+import { arrowBack, heart, heartOutline, shareSocial } from 'ionicons/icons';
 import { getRecipeById, updateRecipe, deleteRecipe } from '../../../services/recipeService';
 import { addFavorite, removeFavorite } from '../../../services/favoriteService';
+import api from '../../../components/AxiosInstance';
 
 function RecipeDetailPage() {
   const { id } = useParams();
@@ -22,6 +23,9 @@ function RecipeDetailPage() {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [shareError, setShareError] = useState('');
+  const [shareLoading, setShareLoading] = useState(false);
 
   useEffect(() => {
     async function loadRecipe() {
@@ -140,6 +144,39 @@ function RecipeDetailPage() {
     }
   };
 
+  const handleShare = async () => {
+    setShareLoading(true);
+    setShareError('');
+    setShareUrl('');
+
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+      setShareError('Faça login para gerar o link de compartilhamento.');
+      setShareLoading(false);
+      return;
+    }
+
+    const user = JSON.parse(storedUser);
+    if (!user?.id) {
+      setShareError('Usuário inválido. Faça login novamente.');
+      setShareLoading(false);
+      return;
+    }
+
+    try {
+      const { data } = await api.post(`/sharing/${id}`, { userId: user.id });
+      setShareUrl(data.shareUrl);
+
+      if (navigator.clipboard && data.shareUrl) {
+        await navigator.clipboard.writeText(data.shareUrl);
+      }
+    } catch (err) {
+      setShareError(err?.response?.data?.message || 'Não foi possível gerar o link de compartilhamento.');
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
   return (
     <IonPage>
       <IonHeader>
@@ -159,6 +196,17 @@ function RecipeDetailPage() {
           <IonButtons slot="end">
             {!editing && recipe && (
               <>
+                {(() => {
+                  const storedUser = localStorage.getItem('user');
+                  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+                  const isOwner = currentUser?.id && recipe.ownerId === currentUser.id;
+                  return isOwner ? (
+                    <IonButton onClick={handleShare} disabled={shareLoading}>
+                      <IonIcon icon={shareSocial} slot="start" />
+                      {shareLoading ? 'Gerando...' : 'Compartilhar'}
+                    </IonButton>
+                  ) : null;
+                })()}
                 <IonButton onClick={handleEdit}>Editar</IonButton>
                 <IonButton color="danger" onClick={handleDelete}>Excluir</IonButton>
               </>
@@ -214,6 +262,18 @@ function RecipeDetailPage() {
                     </div>
                   )}
                 </div>
+
+                {shareUrl ? (
+                  <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+                    Link de compartilhamento gerado e copiado para a área de transferência.
+                    <div className="mt-2 break-all text-blue-700">
+                      <a href={shareUrl} target="_blank" rel="noreferrer">{shareUrl}</a>
+                    </div>
+                  </div>
+                ) : null}
+                {shareError ? (
+                  <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{shareError}</div>
+                ) : null}
 
                 {editing ? (
                   <div className="space-y-4">
