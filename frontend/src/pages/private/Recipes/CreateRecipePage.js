@@ -138,8 +138,8 @@ function CreateRecipePage() {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
-        <div className="max-w-3xl mx-auto space-y-5" style={{ paddingBottom: '100px' }}>
+      <IonContent className="ion-padding" fullscreen style={{ '--padding-bottom': '65px' }}>
+        <div className="max-w-3xl mx-auto space-y-5" style={{ paddingBottom: '60px' }}>
           <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
             <div>
               <h2 className="text-2xl font-bold">Criar Nova Receita</h2>

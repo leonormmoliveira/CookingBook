@@ -167,8 +167,8 @@ function RecipeDetailPage() {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
-        <div className="max-w-3xl mx-auto space-y-4" style={{ paddingBottom: '100px' }}>
+      <IonContent className="ion-padding" fullscreen style={{ '--padding-bottom': '65px' }}>
+        <div className="max-w-3xl mx-auto space-y-4" style={{ paddingBottom: '60px' }}>
           {loading ? (
             <div className="rounded-lg bg-white p-6 shadow-sm text-center text-gray-500">Carregando receita...</div>
           ) : error ? (

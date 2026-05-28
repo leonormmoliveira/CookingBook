@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonSearchbar, IonFab, IonFabButton, IonIcon, IonModal, IonList, IonItem, IonLabel, IonAlert, IonButtons } from '@ionic/react';
-import { add, heart, heartOutline, logOut } from 'ionicons/icons';
+import { add, heart, heartOutline, heartSharp, logOut } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../components/AxiosInstance';
 import { addFavorite, removeFavorite } from '../../../services/favoriteService';
 import authApi from '../../../hooks/authApi.tsx';
+
 
 function HomePage() {
   const [searchText, setSearchText] = useState('');
@@ -164,8 +165,8 @@ function HomePage() {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="p-4" fullscreen>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+      <IonContent className="ion-padding" fullscreen style={{ '--padding-bottom': '85px' }}>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6" style={{ paddingBottom: '80px' }}>
           <div className="mb-6 space-y-4">
             <IonSearchbar
               value={searchText}
@@ -173,24 +174,29 @@ function HomePage() {
               placeholder="Pesquisar receitas ou categorias"
               className="bg-white rounded-md shadow-sm"
             />
-            <div className="flex flex-wrap gap-2 items-center">
-              <button
-                type="button"
-                className={`rounded-full border px-4 py-2 text-sm font-medium ${selectedCategory === 'Todos' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200'}`}
-                onClick={() => setSelectedCategory('Todos')}
-              >
-                Todos
-              </button>
-              {categories.map((category) => (
+            <div className="flex flex-wrap gap-2 items-center justify-between">
+              <div className="flex flex-wrap gap-2 items-center">
                 <button
-                  key={category.id}
                   type="button"
-                  className={`rounded-full border px-4 py-2 text-sm font-medium ${selectedCategory === category.name ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200'}`}
-                  onClick={() => setSelectedCategory(category.name)}
+                  className={`rounded-full border px-4 py-2 text-sm font-medium ${selectedCategory === 'Todos' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200'}`}
+                  onClick={() => setSelectedCategory('Todos')}
                 >
-                  {category.name}
+                  Todos
                 </button>
-              ))}
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    type="button"
+                    className={`rounded-full border px-4 py-2 text-sm font-medium ${selectedCategory === category.name ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200'}`}
+                    onClick={() => setSelectedCategory(category.name)}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </div>
+              <IonButton fill="clear" className="text-gray-700" onClick={() => navigate('/favorites')}>
+                <IonIcon icon={heartSharp} slot="icon-only" />
+              </IonButton>
             </div>
           </div>
 
@@ -250,17 +256,6 @@ function HomePage() {
             <IonIcon icon={add} />
           </IonFabButton>
         </IonFab>
-
-        <button
-          onClick={handleCreateClick}
-          aria-label="Criar"
-          className="fixed bottom-4 right-4 z-50 inline-flex items-center justify-center w-14 h-14 rounded-full shadow-lg text-white"
-          style={{ background: '#0066cc' }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
 
         <IonModal isOpen={showCreateModal} onDidDismiss={() => setShowCreateModal(false)}>
           <div className="p-6">
