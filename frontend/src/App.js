@@ -7,7 +7,6 @@ import './index.css';
 import HomePage from './pages/private/Home/HomePage';
 import RecipeDetailPage from './pages/private/Recipes/RecipeDetailPage';
 import CreateRecipePage from './pages/private/Recipes/CreateRecipePage';
-import CategoriesPage from './pages/private/Categories/CategoriesPage';
 import FavoritesPage from './pages/private/Favorite/FavoritesPage';
 import VideoAnalysisPage from './pages/private/VideoAnalsisPage/VideoAnalysisPage';
 import LoginPage from './pages/public/LoginPage';
@@ -27,7 +26,6 @@ function App() {
             <Route path="/home" element={<HomePage />} />
             <Route path="/recipe/:id" element={<RecipeDetailPage />} />
             <Route path="/create" element={<CreateRecipePage />} />
-            <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
             <Route path="/video-analysis" element={<VideoAnalysisPage />} />
           </Routes>

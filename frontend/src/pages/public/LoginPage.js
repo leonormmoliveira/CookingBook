@@ -3,6 +3,7 @@ import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonInput, IonButt
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebaseConfig.ts';
+import { AuthProvider } from '../../AppContext.tsx';
 
 import authApi from '../../hooks/authApi.tsx';
 
@@ -13,6 +14,7 @@ function LoginPage() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { login } = authApi(() => {});
+  const { Login } = AuthProvider();
 
   const handleLogin = async () => {
     setError('');
@@ -35,7 +37,7 @@ function LoginPage() {
       localStorage.setItem('token', idToken);
 
       const response = await login(idToken);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      Login(response.user);
 
       navigate('/home');
     } catch (err) {
