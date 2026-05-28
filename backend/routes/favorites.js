@@ -1,19 +1,17 @@
 const express = require('express');
+const FavoriteController = require('../controllers/FavoriteController');
 const router = express.Router();
 
-// GET /api/favorites
-router.get('/', (req, res) => {
-  res.json({ message: 'Get favorite recipes' });
-});
+// GET /api/favorites?userId=123
+router.get('/', FavoriteController.getFavorites);
 
-// POST /api/favorites/:recipeId
-router.post('/:recipeId', (req, res) => {
-  res.json({ message: `Add recipe ${req.params.recipeId} to favorites` });
-});
+// GET /api/favorites/check/:recipeId?userId=123
+router.get('/check/:recipeId', FavoriteController.checkFavorite);
 
-// DELETE /api/favorites/:recipeId
-router.delete('/:recipeId', (req, res) => {
-  res.json({ message: `Remove recipe ${req.params.recipeId} from favorites` });
-});
+// POST /api/favorites
+router.post('/', FavoriteController.addFavorite);
+
+// DELETE /api/favorites/:recipeId?userId=123
+router.delete('/:recipeId', FavoriteController.removeFavorite);
 
 module.exports = router;

@@ -1,35 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonSearchbar, IonFab, IonFabButton, IonIcon, IonModal, IonList, IonItem, IonLabel, IonAlert } from '@ionic/react';
-import { add } from 'ionicons/icons';
+import { add, heart, heartOutline } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../components/AxiosInstance';
+import { addFavorite, removeFavorite } from '../../../services/favoriteService';
 
 function HomePage() {
   const [searchText, setSearchText] = useState('');
   const [recipes, setRecipes] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showVideoAlert, setShowVideoAlert] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    async function loadRecipes() {
+    async function loadInitialData() {
       const stored = localStorage.getItem('user');
       if (!stored) return;
       const user = JSON.parse(stored);
 
       try {
         setLoading(true);
-        const { data } = await api.get(`/recipes?userId=${user.id}`);
-        setRecipes(data.recipes || []);
+        const [recipesResponse, categoriesResponse] = await Promise.all([
+          api.get(`/recipes?userId=${user.id}`),
+          api.get(`/categories?userId=${user.id}`),
+        ]);
+
+        setRecipes(recipesResponse.data.recipes || []);
+        setCategories(categoriesResponse.data.categories || []);
       } catch (err) {
-        console.error('Failed to load recipes', err);
+        console.error('Failed to load home data', err);
       } finally {
         setLoading(false);
       }
     }
 
-    loadRecipes();
+    loadInitialData();
   }, []);
 
   const handleCreateClick = () => {
@@ -51,7 +59,9 @@ function HomePage() {
     navigate(`/video-analysis?url=${encodeURIComponent(url || '')}`);
   };
 
-  const filteredRecipes = recipes.filter((recipe) => {
+  const sortFavoritesFirst = (items) => [...items].sort((a, b) => Number(b.isFavorite) - Number(a.isFavorite));
+
+  const searchedRecipes = recipes.filter((recipe) => {
     const keyword = searchText?.toLowerCase?.() || '';
     if (!keyword) return true;
     return [recipe.title, recipe.description, recipe.ingredients, recipe.instructions, recipe.categoryName]
@@ -59,10 +69,14 @@ function HomePage() {
       .some((field) => field.toLowerCase().includes(keyword));
   });
 
+  const categoryFilteredRecipes = selectedCategory === 'Todos'
+    ? searchedRecipes
+    : searchedRecipes.filter((recipe) => recipe.categoryName === selectedCategory);
+
   const categorized = {};
   const uncategorized = [];
 
-  filteredRecipes.forEach((recipe) => {
+  categoryFilteredRecipes.forEach((recipe) => {
     if (recipe.categoryName) {
       categorized[recipe.categoryName] = categorized[recipe.categoryName] || [];
       categorized[recipe.categoryName].push(recipe);
@@ -73,19 +87,41 @@ function HomePage() {
 
   const categorySections = Object.keys(categorized).sort().map((categoryName) => ({
     name: categoryName,
-    recipes: categorized[categoryName],
+    recipes: sortFavoritesFirst(categorized[categoryName]),
   }));
 
   const renderRecipeCard = (recipe) => {
     const imageSrc = recipe.image_data || recipe.image_url;
 
     return (
-      <div key={recipe.id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+      <div key={recipe.id} className="relative bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
         {imageSrc ? (
           <img src={imageSrc} alt={recipe.title} className="w-full h-40 object-cover" />
         ) : (
           <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-gray-400">Sem imagem</div>
         )}
+        <IonButton
+          className="absolute right-3 top-3 z-10"
+          fill="clear"
+          onClick={async () => {
+            const stored = localStorage.getItem('user');
+            if (!stored) return;
+            const user = JSON.parse(stored);
+            if (!user?.id) return;
+            try {
+              if (recipe.isFavorite) {
+                await removeFavorite(recipe.id, user.id);
+              } else {
+                await addFavorite(recipe.id, user.id);
+              }
+              setRecipes((current) => current.map((item) => item.id === recipe.id ? { ...item, isFavorite: item.isFavorite ? 0 : 1 } : item));
+            } catch (err) {
+              console.error('Erro ao atualizar favorito', err);
+            }
+          }}
+        >
+          <IonIcon icon={recipe.isFavorite ? heart : heartOutline} style={{ fontSize: '1.4rem', color: recipe.isFavorite ? '#e0245e' : '#4b5563' }} />
+        </IonButton>
         <div className="p-4">
         <h4 className="text-lg font-semibold">{recipe.title}</h4>
         {recipe.categoryName && <p className="text-xs uppercase tracking-wide text-blue-600 font-semibold">{recipe.categoryName}</p>}
@@ -112,13 +148,32 @@ function HomePage() {
 
       <IonContent className="p-4" fullscreen>
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="mb-6">
+          <div className="mb-6 space-y-4">
             <IonSearchbar
               value={searchText}
               onIonInput={(e) => setSearchText(e.detail.value)}
               placeholder="Pesquisar receitas ou categorias"
               className="bg-white rounded-md shadow-sm"
             />
+            <div className="flex flex-wrap gap-2 items-center">
+              <button
+                type="button"
+                className={`rounded-full border px-4 py-2 text-sm font-medium ${selectedCategory === 'Todos' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200'}`}
+                onClick={() => setSelectedCategory('Todos')}
+              >
+                Todos
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  className={`rounded-full border px-4 py-2 text-sm font-medium ${selectedCategory === category.name ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200'}`}
+                  onClick={() => setSelectedCategory(category.name)}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
           </div>
 
           <section className="mb-6">

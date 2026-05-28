@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonBackButton, IonButtons, IonButton, IonInput, IonTextarea } from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonIcon, IonInput, IonTextarea } from '@ionic/react';
+import { arrowBack, heart, heartOutline } from 'ionicons/icons';
 import { getRecipeById, updateRecipe, deleteRecipe } from '../../../services/recipeService';
+import { addFavorite, removeFavorite } from '../../../services/favoriteService';
 
 function RecipeDetailPage() {
   const { id } = useParams();
@@ -19,12 +21,15 @@ function RecipeDetailPage() {
   const [instructions, setInstructions] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     async function loadRecipe() {
       setLoading(true);
       try {
-        const { recipe: fetched } = await getRecipeById(id);
+        const storedUser = localStorage.getItem('user');
+        const user = storedUser ? JSON.parse(storedUser) : null;
+        const { recipe: fetched } = await getRecipeById(id, user?.id);
         setRecipe(fetched);
         setTitle(fetched.title || '');
         setDescription(fetched.description || '');
@@ -32,6 +37,7 @@ function RecipeDetailPage() {
         setIngredients(fetched.ingredients || '');
         setInstructions(fetched.instructions || '');
         setImagePreview(fetched.image_url || fetched.image_data || '');
+        setIsFavorite(Boolean(fetched.isFavorite));
       } catch (err) {
         setError(err?.response?.data?.message || 'Não foi possível carregar a receita.');
       } finally {
@@ -139,7 +145,15 @@ function RecipeDetailPage() {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/home" />
+            <IonButton fill="clear" onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate('/home');
+              }
+            }}>
+              <IonIcon icon={arrowBack} />
+            </IonButton>
           </IonButtons>
           <IonTitle>Detalhes da Receita</IonTitle>
           <IonButtons slot="end">
@@ -153,7 +167,7 @@ function RecipeDetailPage() {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="p-4">
+      <IonContent fullscreen className="p-4">
         <div className="max-w-3xl mx-auto space-y-4">
           {loading ? (
             <div className="rounded-lg bg-white p-6 shadow-sm text-center text-gray-500">Carregando receita...</div>
@@ -172,10 +186,31 @@ function RecipeDetailPage() {
                     {recipe.categoryName && <p className="text-sm uppercase tracking-wide text-blue-600 font-semibold mt-1">{recipe.categoryName}</p>}
                   </div>
                   {!editing && (
-                    <div className="text-right text-sm text-gray-500">
-                      {recipe.servings ? `${recipe.servings} porções` : 'Sem porções'}
-                      <br />
-                      {recipe.difficulty || 'Sem dificuldade'}
+                    <div className="flex items-center gap-3 text-right text-sm text-gray-500">
+                      <IonButton fill="clear" size="small" onClick={async () => {
+                        const storedUser = localStorage.getItem('user');
+                        if (!storedUser) return;
+                        const user = JSON.parse(storedUser);
+                        if (!user?.id) return;
+                        try {
+                          if (isFavorite) {
+                            await removeFavorite(id, user.id);
+                            setIsFavorite(false);
+                          } else {
+                            await addFavorite(id, user.id);
+                            setIsFavorite(true);
+                          }
+                        } catch (err) {
+                          console.error('Erro ao atualizar favorito', err);
+                        }
+                      }}>
+                        <IonIcon icon={isFavorite ? heart : heartOutline} style={{ color: isFavorite ? '#e0245e' : '#4b5563', fontSize: '1.2rem' }} />
+                      </IonButton>
+                      <div>
+                        {recipe.servings ? `${recipe.servings} porções` : 'Sem porções'}
+                        <br />
+                        {recipe.difficulty || 'Sem dificuldade'}
+                      </div>
                     </div>
                   )}
                 </div>

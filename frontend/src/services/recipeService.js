@@ -5,8 +5,9 @@ export const getRecipes = async () => {
   return response.data;
 };
 
-export const getRecipeById = async (id) => {
-  const response = await apiClient.get(`/recipes/${id}`);
+export const getRecipeById = async (id, userId = null) => {
+  const query = userId ? `?userId=${userId}` : '';
+  const response = await apiClient.get(`/recipes/${id}${query}`);
   return response.data;
 };
 

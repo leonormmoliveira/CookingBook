@@ -115,8 +115,20 @@ const RecipeController = {
 
     try {
       const [rows] = await pool.query(
-        'SELECT id, name, description, color FROM categories WHERE user_id = ? ORDER BY created_at DESC',
-        [userId]
+        `SELECT
+          c.id,
+          c.name,
+          c.description,
+          c.color,
+          COUNT(DISTINCT r.id) AS recipeCount,
+          COUNT(DISTINCT f.id) AS favoriteCount
+        FROM categories c
+        LEFT JOIN recipes r ON r.category_id = c.id
+        LEFT JOIN favorites f ON f.recipe_id = r.id AND f.user_id = ?
+        WHERE c.user_id = ?
+        GROUP BY c.id
+        ORDER BY c.name`,
+        [userId, userId]
       );
       return res.json({ success: true, categories: rows });
     } catch (err) {
@@ -245,15 +257,17 @@ const RecipeController = {
         'r.created_at',
         'c.id AS categoryId',
         'c.name AS categoryName',
+        'CASE WHEN f.id IS NULL THEN 0 ELSE 1 END AS isFavorite',
       ].filter(Boolean).join(', ');
 
       const [rows] = await pool.query(
         `SELECT ${selectColumns}
           FROM recipes r
           LEFT JOIN categories c ON r.category_id = c.id
+          LEFT JOIN favorites f ON f.recipe_id = r.id AND f.user_id = ?
           WHERE r.user_id = ?
           ORDER BY CASE WHEN c.name IS NULL THEN 1 ELSE 0 END, c.name, r.created_at DESC`,
-        [userId]
+        [userId, userId]
       );
       return res.json({ success: true, recipes: rows });
     } catch (err) {
@@ -267,6 +281,8 @@ const RecipeController = {
     if (!recipeId) {
       return res.status(400).json({ success: false, message: 'ID da receita inválido.' });
     }
+
+    const userId = Number(req.query.userId);
 
     try {
       const imageDataColumnExists = await hasColumn('recipes', 'image_data');
@@ -286,14 +302,25 @@ const RecipeController = {
         'r.created_at',
         'c.id AS categoryId',
         'c.name AS categoryName',
+        userId ? 'CASE WHEN f.id IS NULL THEN 0 ELSE 1 END AS isFavorite' : '0 AS isFavorite',
       ].filter(Boolean).join(', ');
+
+      const queryParams = [];
+      let joinFavorite = '';
+
+      if (userId) {
+        joinFavorite = 'LEFT JOIN favorites f ON f.recipe_id = r.id AND f.user_id = ?';
+        queryParams.push(userId);
+      }
+      queryParams.push(recipeId);
 
       const [rows] = await pool.query(
         `SELECT ${selectColumns}
           FROM recipes r
           LEFT JOIN categories c ON r.category_id = c.id
+          ${joinFavorite}
           WHERE r.id = ?`,
-        [recipeId]
+        queryParams
       );
 
       if (rows.length === 0) {
