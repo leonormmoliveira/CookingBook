@@ -162,7 +162,11 @@ function CreateRecipePage() {
       formData.append('prepTime', prepTime || '');
       formData.append('cookTime', cookTime || '');
       formData.append('videoUrl', videoUrl.trim() || '');
-      if (imageFile) formData.append('image', imageFile);
+      if (imageFile) {
+        formData.append('image', imageFile);
+      } else if (selectedImage) {
+        formData.append('imageUrl', selectedImage);
+      }
 
       const { data } = await api.post('/recipes', formData);
       if (data.success) {
@@ -358,6 +362,21 @@ function CreateRecipePage() {
                     Escolher imagem
                   </IonButton>
                   {imageName && <p className="text-xs text-gray-500 mt-1">Selecionado: {imageName}</p>}
+                  {suggestedImages.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2 mt-3">
+                      {suggestedImages.map((img) => (
+                        <div
+                          key={img.id}
+                          onClick={() => setSelectedImage(img.full)}
+                          className={`border rounded overflow-hidden cursor-pointer ${
+                            selectedImage === img.full ? "border-blue-500" : ""
+                          }`}
+                        >
+                          <img src={img.small} className="w-full h-32 object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Link do Vídeo (opcional)</label>
