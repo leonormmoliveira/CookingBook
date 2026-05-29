@@ -8,13 +8,19 @@ function CreateRecipePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [ingredients, setIngredients] = useState('');
   const [instructions, setInstructions] = useState('');
+
   const [imageName, setImageName] = useState('');
   const [imageFile, setImageFile] = useState(null);
+  const [suggestedImages, setSuggestedImages] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  const [loadingImage, setLoadingImage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [categories, setCategories] = useState([]);
@@ -37,12 +43,39 @@ function CreateRecipePage() {
         if (!user?.id) return;
         const { data } = await api.get(`/categories?userId=${user.id}`);
         if (data?.success) setCategories(data.categories || []);
-      } catch (err) {
-        // ignore failure to fetch categories
-      }
+      } catch (err) {}
     }
     loadCategories();
   }, [user]);
+
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImageFile(file);
+    setImageName(file.name);
+    setSelectedImage(null);
+    setSuggestedImages([]);
+  };
+
+  const handleFetchImages = async () => {
+    try {
+      setLoadingImage(true);
+
+      const query = `${title || "food"}`;
+      const { data } = await api.get(
+        `/analysisVideo/image-suggestions?query=${encodeURIComponent(query)}`
+      );
+
+      if (data.success) {
+        setSuggestedImages(data.images);
+      }
+    } catch (err) {
+      setError("Erro ao buscar imagens do Pexels");
+    } finally {
+      setLoadingImage(false);
+    }
+  };
 
   const handleCreateCategory = async () => {
     const name = (category || '').trim();
@@ -61,18 +94,6 @@ function CreateRecipePage() {
     } catch (err) {
       setError(err?.response?.data?.message || 'Erro ao criar categoria.');
     }
-  };
-
-  const handleImageChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      setImageName('');
-      setImageFile(null);
-      return;
-    }
-
-    setImageName(file.name);
-    setImageFile(file);
   };
 
   const handleSubmit = async (event) => {
@@ -100,6 +121,8 @@ function CreateRecipePage() {
       formData.append('instructions', instructions.trim());
       if (imageFile) {
         formData.append('image', imageFile);
+      } else if (selectedImage) {
+        formData.append('imageUrl', selectedImage);
       }
 
       const { data } = await api.post('/recipes', formData);
@@ -193,7 +216,30 @@ function CreateRecipePage() {
                 {imageName && (
                   <p className="mt-2 text-sm text-gray-600">Imagem selecionada: {imageName}</p>
                 )}
+                <IonButton
+                  type="button"
+                  onClick={handleFetchImages}
+                  disabled={loadingImage}
+                >
+                  {loadingImage ? "A procurar imagens..." : "Gerar imagens (Pexels)"}
+                </IonButton>
               </div>
+
+               {suggestedImages.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    {suggestedImages.map((img) => (
+                      <div
+                        key={img.id}
+                        onClick={() => setSelectedImage(img.full)}
+                        className={`border rounded overflow-hidden cursor-pointer ${
+                          selectedImage === img.full ? "border-blue-500" : ""
+                        }`}
+                      >
+                        <img src={img.small} className="w-full h-32 object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                )}
 
               <div>
                 <label className="block text-sm font-medium mb-2">Descrição</label>
