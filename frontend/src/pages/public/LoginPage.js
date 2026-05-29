@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonInput, IonButton } from '@ionic/react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebaseConfig.ts';
+import { useAuth } from '../../AppContext.tsx';
 
 import authApi from '../../hooks/authApi.tsx';
 
@@ -12,15 +13,15 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const shareToken = new URLSearchParams(location.search).get('shareToken');
   const { login } = authApi(() => {});
+  const { Login } = useAuth();
 
   const handleLogin = async () => {
     setError('');
 
     const trimmedEmail = String(email).trim();
-
-    
-
     if (!trimmedEmail || !password) {
       setError('Preencha o e-mail e a senha.');
       return;
@@ -30,19 +31,29 @@ function LoginPage() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, trimmedEmail, password);
+
       const idToken = await userCredential.user.getIdToken();
-
-      localStorage.setItem('token', idToken);
-
       const response = await login(idToken);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      
+      Login(response.user);
 
-      navigate('/home');
+      if (shareToken) {
+        navigate(`/share?token=${encodeURIComponent(shareToken)}`);
+      } else {
+        navigate('/home');
+      }
     } catch (err) {
-      console.error('Login error:', err);
-      const firebaseCode = err?.code ? ` (${err.code})` : '';
+      if (err?.code?.includes('auth/')) {
+        setError('Erro de autenticação Firebase: ' + err.code);
+        return;
+      }
+      if (err?.response?.data?.code === 'EMAIL_NOT_VERIFIED') {
+        setError('Confirma o teu email antes de entrar.');
+        return;
+      }
+
       const message = err?.response?.data?.message || err?.message || 'Não foi possível fazer login.';
-      setError(`${message}${firebaseCode}`);
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -97,7 +108,7 @@ function LoginPage() {
           </IonButton>
 
           <p className="text-sm text-gray-600 text-center">
-            Ainda não tem conta? <Link to="/signup" className="text-blue-600 font-medium">Cadastre-se</Link>
+            Ainda não tem conta? <Link to={`/signup${shareToken ? `?shareToken=${encodeURIComponent(shareToken)}` : ''}`} className="text-blue-600 font-medium">Cadastre-se</Link>
           </p>
         </div>
       </IonContent>

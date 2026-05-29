@@ -12,36 +12,42 @@ const AuthController = {
         try {
             // Verificar o token no Firebase
             const decoded = await admin.auth().verifyIdToken(idToken);
-            // Buscar usuário no MySQL
-            let [rows] = await pool.query('SELECT * FROM users WHERE authUid = ?', [decoded.uid]);
+            if (!decoded.email_verified) {
+                return res.status(403).json({
+                    success: false,
+                    code: "EMAIL_NOT_VERIFIED",
+                    message: "Email não verificado"
+                });
+            }
+
+            let [rows] = await pool.query( 'SELECT * FROM users WHERE authUid = ?', [decoded.uid] );
             let user = rows[0];
 
             // Se o usuário existe no Firebase mas não no MySQL, cria um registro básico automaticamente
             if (!user) {
                 const email = decoded.email || null;
                 const username = email ? email.split('@')[0] : `user_${decoded.uid}`;
-                const name = decoded.name || username;
-                const status = decoded.email_verified ? 'active' : 'pending';
-                const emailVerifiedFlag = decoded.email_verified ? 1 : 0;
 
                 const [insertResult] = await pool.query(
                     'INSERT INTO users (authUid, username, name, email, status, emailVerified) VALUES (?, ?, ?, ?, ?, ?)',
-                    [decoded.uid, username, name, email, status, emailVerifiedFlag]
+                    [
+                        decoded.uid,
+                        username,
+                        username,
+                        email,
+                        'active',
+                        1
+                    ]
                 );
 
-                // Rebuscar usuário recém-criado
-                [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [insertResult.insertId]);
-                user = rows[0];
-            }
+                const [newRows] = await pool.query(
+                    'SELECT * FROM users WHERE id = ?',
+                    [insertResult.insertId]
+                );
 
-            if (!decoded.email_verified) {
-                return res.status(403).json({success: false, message: 'Email não verificado. Verifique sua caixa de entrada.' });
+                user = newRows[0];
             }
-
-            res.cookie("auth", idToken, { httpOnly: true, secure: false, sameSite: "Lax" });
-            // Você pode criar uma função buildProfileResponse para montar o perfil se necessário
-            const userProfile = user; // ou buildProfileResponse(user)
-            return res.json({success: true, user: userProfile, message: 'Login efetuado com sucesso' });
+            return res.json({success: true, user, message: 'Login efetuado com sucesso' });
         } catch (err) {
             return res.status(401).json({success: false, message: 'Token inválido ou expirado'});
         }
@@ -108,11 +114,9 @@ const AuthController = {
 
             return res.status(201).json(response);
         } catch (err) {
-        
             if (firebaseUser?.uid) {
                 await admin.auth().deleteUser(firebaseUser.uid);
             }
-
             return res.status(500).json({success: false, message: "Erro ao criar o usuário", error: err.message });
         }
     },

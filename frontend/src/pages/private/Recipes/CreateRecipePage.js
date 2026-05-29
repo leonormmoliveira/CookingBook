@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonBackButton, IonButtons, IonInput, IonTextarea, IonButton } from '@ionic/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../../components/AxiosInstance';
+import { useAuth } from '../../../AppContext.tsx';
 
 function CreateRecipePage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -32,9 +34,6 @@ function CreateRecipePage() {
   useEffect(() => {
     async function loadCategories() {
       try {
-        const storedUser = localStorage.getItem('user');
-        if (!storedUser) return;
-        const user = JSON.parse(storedUser);
         if (!user?.id) return;
         const { data } = await api.get(`/categories?userId=${user.id}`);
         if (data?.success) setCategories(data.categories || []);
@@ -42,20 +41,17 @@ function CreateRecipePage() {
         // ignore failure to fetch categories
       }
     }
-
     loadCategories();
-  }, []);
+  }, [user]);
 
   const handleCreateCategory = async () => {
     const name = (category || '').trim();
     if (!name) return;
     try {
-      const storedUser = localStorage.getItem('user');
-      if (!storedUser) {
+      if (!user?.id) {
         setError('Faça login para criar categorias.');
         return;
       }
-      const user = JSON.parse(storedUser);
       const { data } = await api.post('/categories', { userId: user.id, name });
       if (data?.success) {
         const newCat = data.category;
@@ -83,15 +79,8 @@ function CreateRecipePage() {
     event.preventDefault();
     setError('');
 
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
-      setError('Usuário não encontrado. Faça login e tente novamente.');
-      return;
-    }
-
-    const user = JSON.parse(storedUser);
     if (!user?.id) {
-      setError('ID de usuário inválido. Faça login novamente.');
+      setError('Usuário não encontrado. Faça login e tente novamente.');
       return;
     }
 
@@ -114,7 +103,6 @@ function CreateRecipePage() {
       }
 
       const { data } = await api.post('/recipes', formData);
-
       if (data.success) {
         navigate('/home');
       } else {
@@ -138,8 +126,8 @@ function CreateRecipePage() {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="p-4 pb-24">
-        <div className="max-w-3xl mx-auto space-y-5">
+      <IonContent className="ion-padding" fullscreen style={{ '--padding-bottom': '65px' }}>
+        <div className="max-w-3xl mx-auto space-y-5" style={{ paddingBottom: '60px' }}>
           <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
             <div>
               <h2 className="text-2xl font-bold">Criar Nova Receita</h2>
@@ -227,6 +215,7 @@ function CreateRecipePage() {
                     onIonInput={(e) => setIngredients(e.detail.value)}
                     placeholder="Um ingrediente por linha"
                     rows={5}
+                    autoGrow={true}
                   />
                 </div>
               </div>
@@ -239,6 +228,7 @@ function CreateRecipePage() {
                     onIonInput={(e) => setInstructions(e.detail.value)}
                     placeholder="Instruções passo a passo"
                     rows={5}
+                    autoGrow={true}
                   />
                 </div>
               </div>

@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const RecipeController = require('../controllers/RecipeController');
 
 // POST /api/video-analysis
-router.post('/', (req, res) => {
-  res.json({ message: 'Analyze video and generate recipe' });
-});
+router.post('/', RecipeController.analyzeVideo);
 
 module.exports = router;

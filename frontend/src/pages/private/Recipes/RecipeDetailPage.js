@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonIcon, IonInput, IonTextarea } from '@ionic/react';
-import { arrowBack, heart, heartOutline } from 'ionicons/icons';
+import { arrowBack, heart, heartOutline, shareSocial } from 'ionicons/icons';
 import { getRecipeById, updateRecipe, deleteRecipe } from '../../../services/recipeService';
 import { addFavorite, removeFavorite } from '../../../services/favoriteService';
+import { useAuth } from '../../../AppContext.tsx';
+import api from '../../../components/AxiosInstance';
 
 function RecipeDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-
+  const { user } = useAuth();
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -22,13 +24,20 @@ function RecipeDetailPage() {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [shareError, setShareError] = useState('');
+  const [shareLoading, setShareLoading] = useState(false);
 
   useEffect(() => {
     async function loadRecipe() {
       setLoading(true);
+      if (!user?.id) {
+        setError('Faça login para visualizar a receita.');
+        setLoading(false);
+        return;
+      }
+
       try {
-        const storedUser = localStorage.getItem('user');
-        const user = storedUser ? JSON.parse(storedUser) : null;
         const { recipe: fetched } = await getRecipeById(id, user?.id);
         setRecipe(fetched);
         setTitle(fetched.title || '');
@@ -46,7 +55,7 @@ function RecipeDetailPage() {
     }
 
     loadRecipe();
-  }, [id]);
+  }, [id, user]);
 
   const handleEdit = () => {
     setEditing(true);
@@ -84,18 +93,10 @@ function RecipeDetailPage() {
       return;
     }
 
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
+    if (!user?.id) {
       setError('Usuário não encontrado. Faça login novamente.');
       return;
     }
-
-    const user = JSON.parse(storedUser);
-    if (!user?.id) {
-      setError('ID de usuário inválido. Faça login novamente.');
-      return;
-    }
-
     setSaving(true);
     setError('');
 
@@ -106,6 +107,7 @@ function RecipeDetailPage() {
       formData.append('description', description.trim() || '');
       formData.append('categoryName', categoryName.trim() || '');
       formData.append('ingredients', ingredients.trim());
+      
       formData.append('instructions', instructions.trim());
       if (imageFile) {
         formData.append('image', imageFile);
@@ -140,6 +142,31 @@ function RecipeDetailPage() {
     }
   };
 
+  const handleShare = async () => {
+    setShareLoading(true);
+    setShareError('');
+    setShareUrl('');
+
+    if (!user?.id) {
+      setShareError('Faça login para gerar o link de compartilhamento.');
+      setShareLoading(false);
+      return;
+    }
+
+    try {
+      const { data } = await api.post(`/sharing/${id}`, { userId: user.id });
+      setShareUrl(data.shareUrl);
+
+      if (navigator.clipboard && data.shareUrl) {
+        await navigator.clipboard.writeText(data.shareUrl);
+      }
+    } catch (err) {
+      setShareError(err?.response?.data?.message || 'Não foi possível gerar o link de compartilhamento.');
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
   return (
     <IonPage>
       <IonHeader>
@@ -159,6 +186,15 @@ function RecipeDetailPage() {
           <IonButtons slot="end">
             {!editing && recipe && (
               <>
+                {(() => {
+                  const isOwner = user?.id && recipe.ownerId === user.id;
+                  return isOwner ? (
+                    <IonButton onClick={handleShare} disabled={shareLoading}>
+                      <IonIcon icon={shareSocial} slot="start" />
+                      {shareLoading ? 'Gerando...' : 'Compartilhar'}
+                    </IonButton>
+                  ) : null;
+                })()}
                 <IonButton onClick={handleEdit}>Editar</IonButton>
                 <IonButton color="danger" onClick={handleDelete}>Excluir</IonButton>
               </>
@@ -167,8 +203,8 @@ function RecipeDetailPage() {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent fullscreen className="p-4">
-        <div className="max-w-3xl mx-auto space-y-4">
+      <IonContent className="ion-padding" fullscreen style={{ '--padding-bottom': '65px' }}>
+        <div className="max-w-3xl mx-auto space-y-4" style={{ paddingBottom: '60px' }}>
           {loading ? (
             <div className="rounded-lg bg-white p-6 shadow-sm text-center text-gray-500">Carregando receita...</div>
           ) : error ? (
@@ -188,9 +224,6 @@ function RecipeDetailPage() {
                   {!editing && (
                     <div className="flex items-center gap-3 text-right text-sm text-gray-500">
                       <IonButton fill="clear" size="small" onClick={async () => {
-                        const storedUser = localStorage.getItem('user');
-                        if (!storedUser) return;
-                        const user = JSON.parse(storedUser);
                         if (!user?.id) return;
                         try {
                           if (isFavorite) {
@@ -215,36 +248,58 @@ function RecipeDetailPage() {
                   )}
                 </div>
 
+                {shareUrl ? (
+                  <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+                    Link de compartilhamento gerado e copiado para a área de transferência.
+                    <div className="mt-2 break-all text-blue-700">
+                      <a href={shareUrl} target="_blank" rel="noreferrer">{shareUrl}</a>
+                    </div>
+                  </div>
+                ) : null}
+                {shareError ? (
+                  <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{shareError}</div>
+                ) : null}
+
                 {editing ? (
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">Título</label>
-                      <IonInput value={title} onIonInput={(e) => setTitle(e.detail.value)} placeholder="Título da receita" />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonInput value={title} onIonInput={(e) => setTitle(e.detail.value)} placeholder="Título da receita" />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Categoria</label>
-                      <IonInput value={categoryName} onIonInput={(e) => setCategoryName(e.detail.value)} placeholder="Categoria" />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonInput value={categoryName} onIonInput={(e) => setCategoryName(e.detail.value)} placeholder="Categoria" />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Foto da receita</label>
-                      <input type="file" accept="image/*" onChange={handleImageChange} className="w-full rounded border border-gray-200 bg-white p-2 text-sm" />
+                      <input type="file" accept="image/*" onChange={handleImageChange} className="w-full rounded border border-gray-300 bg-white p-2 text-sm" />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Descrição</label>
-                      <IonTextarea value={description} onIonInput={(e) => setDescription(e.detail.value)} rows={3} />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonTextarea value={description} onIonInput={(e) => setDescription(e.detail.value)} rows={3} />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Ingredientes</label>
-                      <IonTextarea value={ingredients} onIonInput={(e) => setIngredients(e.detail.value)} rows={5} />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonTextarea value={ingredients} onIonInput={(e) => setIngredients(e.detail.value)} rows={5} />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Modo de preparo</label>
-                      <IonTextarea value={instructions} onIonInput={(e) => setInstructions(e.detail.value)} rows={6} />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonTextarea value={instructions} onIonInput={(e) => setInstructions(e.detail.value)} rows={6} />
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-3 sm:flex-row">
