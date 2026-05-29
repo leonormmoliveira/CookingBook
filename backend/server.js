@@ -17,7 +17,7 @@ app.use('/api/recipes', require('./routes/recipes'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/favorites', require('./routes/favorites'));
 app.use('/api/sharing', require('./routes/sharing'));
-app.use('/api/video-analysis', require('./routes/videoAnalysis'));
+app.use('/api/analysisVideo', require('./routes/videoAnalysis'));
 
 // Basic route
 app.get('/api/health', (req, res) => {
