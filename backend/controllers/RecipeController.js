@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { uploadToCloudinary } = require('../middleware/upload');
+const axios = require('axios');
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY;
 const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';

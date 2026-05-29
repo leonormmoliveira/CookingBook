@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { IonPage, IonButtons, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonSearchbar, IonFab, IonFabButton, IonIcon, IonModal, IonList, IonItem, IonLabel, IonAlert } from '@ionic/react';
-import { add, heart, heartOutline } from 'ionicons/icons';
+import { add, heart, heartOutline, chevronDown, chevronUp } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../components/AxiosInstance';
 import { addFavorite, removeFavorite } from '../../../services/favoriteService';
@@ -16,9 +16,10 @@ function HomePage() {
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showVideoAlert, setShowVideoAlert] = useState(false);
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const navigate = useNavigate();
-  const { logout } = authApi(() => {});
-  const {user, Logout} = useAuth();
+  const { logout } = authApi(() => { });
+  const { user, Logout } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -39,7 +40,6 @@ function HomePage() {
           api.get(`/recipes?userId=${user.id}`),
           api.get(`/categories?userId=${user.id}`),
         ]);
-
         setRecipes(recipesResponse.data.recipes || []);
         setCategories(categoriesResponse.data.categories || []);
       } catch (err) {
@@ -51,9 +51,13 @@ function HomePage() {
     loadInitialData();
   }, [user]);
 
-  const handleCreateClick = () => {
-    setShowCreateModal(true);
-  };
+  // Sort categories by recipe count descending, take top 3
+  const sortedCategories = [...categories].sort((a, b) => {
+    const countA = recipes.filter(r => r.categoryName === a.name).length;
+    const countB = recipes.filter(r => r.categoryName === b.name).length;
+    return countB - countA;
+  });
+  const visibleCategories = showAllCategories ? sortedCategories : sortedCategories.slice(0, 3);
 
   const chooseManual = () => {
     setShowCreateModal(false);
@@ -103,17 +107,13 @@ function HomePage() {
 
   const renderRecipeCard = (recipe) => {
     const imageSrc = recipe.image_data || recipe.image_url;
-
     return (
-      <div key={recipe.id} className="relative bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
-        {imageSrc ? (
-          <img src={imageSrc} alt={recipe.title} className="w-full h-40 object-cover" />
-        ) : (
-          <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-gray-400">Sem imagem</div>
+      <div key={recipe.id} className="relative bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+        {imageSrc && (
+          <img src={imageSrc} alt={recipe.title} className="w-full h-32 object-cover" />
         )}
-        <IonButton
-          className="absolute right-3 top-3 z-10"
-          fill="clear"
+        <button
+          className="absolute right-3 top-3 z-10 bg-white rounded-full p-1.5 shadow-sm"
           onClick={async () => {
             if (!user?.id) return;
             try {
@@ -122,119 +122,149 @@ function HomePage() {
               } else {
                 await addFavorite(recipe.id, user.id);
               }
-              setRecipes((current) => current.map((item) => item.id === recipe.id ? { ...item, isFavorite: item.isFavorite ? 0 : 1 } : item));
+              setRecipes((current) =>
+                current.map((item) =>
+                  item.id === recipe.id ? { ...item, isFavorite: item.isFavorite ? 0 : 1 } : item
+                )
+              );
             } catch (err) {
               console.error('Erro ao atualizar favorito', err);
             }
           }}
         >
-          <IonIcon icon={recipe.isFavorite ? heart : heartOutline} style={{ fontSize: '1.4rem', color: recipe.isFavorite ? '#e0245e' : '#4b5563' }} />
-        </IonButton>
-        <div className="p-4">
-        <h4 className="text-lg font-semibold">{recipe.title}</h4>
-        {recipe.categoryName && <p className="text-xs uppercase tracking-wide text-blue-600 font-semibold">{recipe.categoryName}</p>}
-        <p className="text-sm text-gray-600 mt-2 line-clamp-3">{recipe.description || recipe.instructions?.slice(0, 120) || 'Sem descrição disponível.'}</p>
-        <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-500">
-          {recipe.servings && <span>{recipe.servings} porções</span>}
-          {recipe.difficulty && <span>{recipe.difficulty}</span>}
+          <IonIcon
+            icon={recipe.isFavorite ? heart : heartOutline}
+            style={{ fontSize: '1.1rem', color: recipe.isFavorite ? '#e0245e' : '#9ca3af' }}
+          />
+        </button>
+
+        <div className="p-3">
+          <h4 className="text-base font-semibold text-gray-900 leading-snug">{recipe.title}</h4>
+          {recipe.categoryName && (
+            <p className="text-xs uppercase tracking-wide text-blue-600 font-semibold mt-0.5">{recipe.categoryName}</p>
+          )}
+          <p className="text-sm text-gray-500 mt-2 line-clamp-2">
+            {recipe.description || recipe.instructions?.slice(0, 100) || 'Sem descrição disponível.'}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-400">
+            {recipe.servings && <span>{recipe.servings} porções</span>}
+            {recipe.difficulty && <span>· {recipe.difficulty}</span>}
+          </div>
+          <button
+            onClick={() => navigate(`/recipe/${recipe.id}`)}
+            className="mt-3 w-full py-1.5 rounded-xl border border-blue-600 text-blue-600 text-sm font-medium hover:bg-blue-50 transition-colors"
+          >
+            Ver receita
+          </button>
         </div>
-        <IonButton className="mt-4 custom-btn w-full" fill="outline" onClick={() => navigate(`/recipe/${recipe.id}`)}>
-          Ver receita
-        </IonButton>
       </div>
-    </div>
-  );
+    );
   };
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle className="text-2xl font-bold">CookingBook</IonTitle>
+      <IonHeader className="shadow-none">
+        <IonToolbar style={{ '--background': '#ffffff', '--border-color': '#f3f4f6' }}>
+          <IonTitle className="font-bold text-gray-900">CookingBook</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleLogout} title="Sair">
-              <IonIcon icon={logOut} />
+            <IonButton fill="clear" onClick={() => navigate('/favorites')} title="Favoritos">
+              <IonIcon icon={heartSharp} style={{ color: '#e0245e' }} />
+            </IonButton>
+            <IonButton fill="clear" onClick={handleLogout} title="Sair">
+              <IonIcon icon={logOut} style={{ color: '#6b7280' }} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding" fullscreen style={{ '--padding-bottom': '85px' }}>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6" style={{ paddingBottom: '80px' }}>
-          <div className="mb-6 space-y-4">
+      <IonContent
+        className="ion-padding"
+        fullscreen
+        style={{ '--background': '#f9fafb', '--padding-bottom': '140px' }}
+      >
+        <div className="max-w-5xl mx-auto px-4 sm:px-6" style={{ paddingBottom: '120px' }}>
+
+          {/* Search */}
+          <div className="mb-4 mt-2">
             <IonSearchbar
               value={searchText}
               onIonInput={(e) => setSearchText(e.detail.value)}
               placeholder="Pesquisar receitas ou categorias"
-              className="bg-white rounded-md shadow-sm"
+              style={{
+                '--background': '#ffffff',
+                '--border-radius': '14px',
+                '--box-shadow': '0 1px 4px rgba(0,0,0,0.06)',
+                '--color': '#111827',
+                '--placeholder-color': '#9ca3af',
+              }}
             />
-            <div className="flex flex-wrap gap-2 items-center justify-between">
-              <div className="flex flex-wrap gap-2 items-center">
+          </div>
+
+          {/* Category Filters */}
+          <div className="mb-6">
+            <div className="flex flex-wrap gap-2 items-center">
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('Todos')}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${selectedCategory === 'Todos'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                  }`}
+              >
+                Todos
+              </button>
+              {visibleCategories.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(category.name)}
+                  className={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${selectedCategory === category.name
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                    }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+              {sortedCategories.length > 3 && (
                 <button
                   type="button"
-                  className={`rounded-full border px-4 py-2 text-sm font-medium ${selectedCategory === 'Todos' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200'}`}
-                  onClick={() => setSelectedCategory('Todos')}
+                  onClick={() => setShowAllCategories((prev) => !prev)}
+                  className="rounded-full px-3 py-1.5 text-sm font-medium border bg-white text-gray-500 border-gray-200 hover:border-blue-300 flex items-center gap-1 transition-colors"
                 >
-                  Todos
+                  <IonIcon icon={showAllCategories ? chevronUp : chevronDown} style={{ fontSize: '0.9rem' }} />
                 </button>
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    className={`rounded-full border px-4 py-2 text-sm font-medium ${selectedCategory === category.name ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200'}`}
-                    onClick={() => setSelectedCategory(category.name)}
-                  >
-                    {category.name}
-                  </button>
-                ))}
-              </div>
-              <IonButton fill="clear" className="text-gray-700" onClick={() => navigate('/favorites')}>
-                <IonIcon icon={heartSharp} slot="icon-only" />
-              </IonButton>
+              )}
             </div>
           </div>
-        </div>
-          <section className="mb-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h3 className="text-lg font-semibold">Minhas Receitas</h3>
-                <p className="text-sm text-gray-500 mt-1">Receitas agrupadas por categoria e listadas para acesso rápido.</p>
-              </div>
-              <IonButton className="custom-btn" onClick={handleCreateClick}>
-                Nova receita
-              </IonButton>
-            </div>
-          </section>
 
+          {/* Recipe Sections */}
           {loading ? (
-            <div className="rounded-lg bg-white p-6 shadow-sm text-center text-gray-500">Carregando receitas...</div>
+            <div className="rounded-2xl bg-white p-6 text-center text-gray-400 text-sm">Carregando receitas...</div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-8">
               {categorySections.length === 0 && uncategorized.length === 0 ? (
-                <div className="rounded-lg bg-white p-6 shadow-sm text-center text-gray-500">Nenhuma receita encontrada.</div>
+                <div className="rounded-2xl bg-white p-6 text-center text-gray-400 text-sm">Nenhuma receita encontrada.</div>
               ) : (
                 <>
                   {categorySections.map((section) => (
-                    <div key={section.name} className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="text-xl font-semibold">{section.name}</h4>
-                          <p className="text-sm text-gray-500">{section.recipes.length} receita(s)</p>
-                        </div>
+                    <div key={section.name}>
+                      <div className="mb-3">
+                        <h4 className="text-base font-semibold text-gray-800">{section.name}</h4>
+                        <p className="text-xs text-gray-400">{section.recipes.length} receita(s)</p>
                       </div>
-                      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                         {section.recipes.map(renderRecipeCard)}
                       </div>
                     </div>
                   ))}
-
                   {uncategorized.length > 0 && (
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="text-xl font-semibold">Sem categoria</h4>
-                        <p className="text-sm text-gray-500">Receitas criadas sem categoria definida.</p>
+                    <div>
+                      <div className="mb-3">
+                        <h4 className="text-base font-semibold text-gray-800">Sem categoria</h4>
+                        <p className="text-xs text-gray-400">Receitas sem categoria definida.</p>
                       </div>
-                      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                         {uncategorized.map(renderRecipeCard)}
                       </div>
                     </div>
@@ -243,51 +273,65 @@ function HomePage() {
               )}
             </div>
           )}
+        </div>
 
-        <IonFab vertical="bottom" horizontal="end" slot="fixed" style={{ zIndex: 1000, right: 16, bottom: 16 }}>
-          <IonFabButton onClick={handleCreateClick} style={{ zIndex: 1001, background: '#0066cc', color: '#fff', boxShadow: '0 6px 18px rgba(0,0,0,0.12)' }}>
-            <IonIcon icon={add} />
+        {/* FAB */}
+        <IonFab
+          vertical="bottom"
+          horizontal="end"
+          slot="fixed"
+          style={{ right: 20, bottom: 24, zIndex: 100 }}
+        >
+          <IonFabButton
+            onClick={() => setShowCreateModal(true)}
+            style={{
+              '--background': '#2563eb',
+              '--color': '#ffffff',
+              '--box-shadow': '0 4px 12px rgba(37, 99, 235, 0.4)',
+            }}
+          >
+            <IonIcon icon={add} size="large" />
           </IonFabButton>
         </IonFab>
 
-        <IonModal isOpen={showCreateModal} onDidDismiss={() => setShowCreateModal(false)}>
-          <div className="p-6">
-            <h3 className="text-xl font-semibold mb-4">Novo</h3>
-            <IonList>
-              <IonItem button onClick={chooseVideo}>
-                <IonLabel>Gerar a partir de vídeo</IonLabel>
-              </IonItem>
-              <IonItem button onClick={chooseManual}>
-                <IonLabel>Inserir manualmente</IonLabel>
-              </IonItem>
-              <IonItem button onClick={() => setShowCreateModal(false)}>
-                <IonLabel>Cancelar</IonLabel>
-              </IonItem>
-            </IonList>
+        {/* Create Modal */}
+        <IonModal isOpen={showCreateModal} onDidDismiss={() => setShowCreateModal(false)} breakpoints={[0, 1]} initialBreakpoint={1}>
+          <div className="p-6 space-y-3">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Nova Receita</h3>
+            <button
+              onClick={chooseVideo}
+              className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 bg-white hover:bg-blue-50 hover:border-blue-300 text-sm font-medium text-gray-700 transition-colors"
+            >
+              🎬 Gerar a partir de vídeo
+            </button>
+            <button
+              onClick={chooseManual}
+              className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 bg-white hover:bg-blue-50 hover:border-blue-300 text-sm font-medium text-gray-700 transition-colors"
+            >
+              ✏️ Inserir manualmente
+            </button>
+            <button
+              onClick={() => setShowCreateModal(false)}
+              className="w-full text-center px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Cancelar
+            </button>
           </div>
         </IonModal>
 
+        {/* Video URL Alert */}
         <IonAlert
           isOpen={showVideoAlert}
           onDidDismiss={() => setShowVideoAlert(false)}
-          header={'Analisar vídeo'}
+          header="Analisar vídeo"
           inputs={[{
             name: 'videoUrl',
             type: 'url',
             placeholder: 'https://youtube.com/watch?v=...'
           }]}
           buttons={[
-            {
-              text: 'Cancelar',
-              role: 'cancel',
-              handler: () => setShowVideoAlert(false)
-            },
-            {
-              text: 'Analisar',
-              handler: (data) => {
-                submitVideo(data.videoUrl || '');
-              }
-            }
+            { text: 'Cancelar', role: 'cancel', handler: () => setShowVideoAlert(false) },
+            { text: 'Analisar', handler: (data) => submitVideo(data.videoUrl || '') }
           ]}
         />
       </IonContent>

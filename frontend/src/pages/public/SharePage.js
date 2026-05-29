@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonButtons, IonIcon } from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonIcon } from '@ionic/react';
 import { homeOutline } from 'ionicons/icons';
 import api from '../../components/AxiosInstance';
 import { createRecipe } from '../../services/recipeService';
@@ -19,7 +19,6 @@ function SharePage() {
 
   useEffect(() => {
     loadShareData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadShareData = async () => {
@@ -99,39 +98,41 @@ function SharePage() {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton fill="clear" onClick={() => navigate('/home')}>
-              <IonIcon icon={homeOutline} />
-            </IonButton>
+            <button
+              onClick={() => navigate('/home')}
+              className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <IonIcon icon={homeOutline} style={{ fontSize: '1.4rem' }} />
+            </button>
           </IonButtons>
-          
           <IonTitle>Receita Compartilhada</IonTitle>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding" fullscreen style={{ '--padding-bottom': '100px' }}>
-        <div className="max-w-3xl mx-auto space-y-4 pb-6">
+      <IonContent className="ion-padding" fullscreen style={{ '--background': '#f9fafb', '--padding-bottom': '100px' }}>
+        <div className="max-w-3xl mx-auto space-y-6 pb-10">
           {loading ? (
-            <div className="rounded-lg bg-white p-6 shadow-sm text-center text-gray-500">Carregando receita...</div>
-          ) : error ? (
-            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
+            <div className="rounded-2xl bg-white p-6 shadow-sm text-center text-gray-500">Carregando receita...</div>
+          ) : error && !recipe ? (
+            <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
           ) : recipe ? (
             <>
               {/* Recipe Card */}
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 {recipe.image_url && (
-                  <img 
-                    src={recipe.image_url} 
-                    alt={recipe.title} 
+                  <img
+                    src={recipe.image_url}
+                    alt={recipe.title}
                     className="w-full h-56 object-cover"
                   />
                 )}
 
-                <div className="p-6 space-y-5">
+                <div className="p-6 space-y-6">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <h2 className="text-3xl font-bold">{recipe.title}</h2>
+                      <h2 className="text-2xl font-bold text-gray-900">{recipe.title}</h2>
                       {recipe.categoryName && (
-                        <p className="text-sm uppercase tracking-wide text-blue-600 font-semibold mt-1">
+                        <p className="text-xs uppercase tracking-wide text-blue-600 font-semibold mt-1">
                           {recipe.categoryName}
                         </p>
                       )}
@@ -144,19 +145,19 @@ function SharePage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    {recipe.prep_time && <div><strong>Prep:</strong> {recipe.prep_time} min</div>}
+                  <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 p-4 rounded-xl">
+                    {recipe.prep_time && <div><strong>Preparação:</strong> {recipe.prep_time} min</div>}
                     {recipe.cook_time && <div><strong>Cozimento:</strong> {recipe.cook_time} min</div>}
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold">Descrição</h3>
-                    <p className="text-gray-700 mt-2">{recipe.description || 'Sem descrição.'}</p>
+                    <h3 className="text-lg font-semibold text-gray-800">Descrição</h3>
+                    <p className="text-gray-600 mt-2">{recipe.description || 'Sem descrição.'}</p>
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold">Ingredientes</h3>
-                    <div className="mt-2 space-y-2 text-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-800">Ingredientes</h3>
+                    <div className="mt-3 space-y-2 text-gray-700">
                       {recipe.ingredients?.split('\n').map((line, index) => (
                         line.trim() && <p key={index}>• {line.trim()}</p>
                       ))}
@@ -164,8 +165,8 @@ function SharePage() {
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold">Modo de preparo</h3>
-                    <div className="mt-2 space-y-2 text-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-800">Modo de preparo</h3>
+                    <div className="mt-3 space-y-2 text-gray-700">
                       {recipe.instructions?.split('\n').map((line, index) => (
                         line.trim() && <p key={index}>{line.trim()}</p>
                       ))}
@@ -174,11 +175,11 @@ function SharePage() {
 
                   {recipe.video_url && (
                     <div className="pt-4">
-                      <h3 className="text-lg font-semibold">Vídeo</h3>
-                      <a 
-                        href={recipe.video_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
+                      <h3 className="text-lg font-semibold text-gray-800">Vídeo</h3>
+                      <a
+                        href={recipe.video_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-blue-600 hover:underline text-sm break-all"
                       >
                         {recipe.video_url}
@@ -189,43 +190,72 @@ function SharePage() {
               </div>
 
               {/* Save / Login Card */}
-              {user ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
-                  <h3 className="text-lg font-semibold">Salve essa receita na sua conta</h3>
-                  <p className="text-sm text-gray-600">Clique em clonar para criar uma cópia desta receita no seu CookingBook.</p>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
+                {user ? (
+                  <>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Salve essa receita na sua conta</h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Clique em clonar para criar uma cópia desta receita no seu CookingBook.
+                      </p>
+                    </div>
 
-                  {success && <div className="rounded bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">{success}</div>}
-                  {error && <div className="rounded bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
+                    {success && (
+                      <div className="rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+                        {success}
+                      </div>
+                    )}
 
-                  <IonButton className="custom-btn w-full" onClick={handleClone} disabled={cloning}>
-                    {cloning ? 'Clonando...' : 'Clonar Receita'}
-                  </IonButton>
+                    {error && (
+                      <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                        {error}
+                      </div>
+                    )}
 
-                  <IonButton fill="clear" className="w-full" onClick={() => navigate('/home')}>
-                    Voltar para o App
-                  </IonButton>
-                </div>
-              ) : (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
-                  <h3 className="text-lg font-semibold">Faça login para salvar</h3>
-                  <p className="text-sm text-gray-600">Entre na sua conta para clonar esta receita.</p>
-                  
-                  <IonButton 
-                    className="custom-btn w-full" 
-                    onClick={() => navigate(`/login?shareToken=${encodeURIComponent(token)}`)}
-                  >
-                    Entrar
-                  </IonButton>
+                    <button
+                      type="button"
+                      onClick={handleClone}
+                      disabled={cloning}
+                      className="w-full py-2.5 rounded-xl bg-blue-600 text-white font-medium text-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      {cloning ? 'Clonando...' : 'Clonar Receita'}
+                    </button>
 
-                  <IonButton 
-                    fill="clear" 
-                    className="w-full" 
-                    onClick={() => navigate(`/signup?shareToken=${encodeURIComponent(token)}`)}
-                  >
-                    Criar conta
-                  </IonButton>
-                </div>
-              )}
+                    <button
+                      type="button"
+                      onClick={() => navigate('/home')}
+                      className="w-full py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium text-sm hover:bg-gray-50 transition-colors"
+                    >
+                      Voltar para o App
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Faça login para salvar</h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Entre na sua conta para clonar esta receita.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/login?shareToken=${encodeURIComponent(token)}`)}
+                      className="w-full py-2.5 rounded-xl bg-blue-600 text-white font-medium text-sm hover:bg-blue-700 transition-colors"
+                    >
+                      Entrar
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/signup?shareToken=${encodeURIComponent(token)}`)}
+                      className="w-full py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium text-sm hover:bg-gray-50 transition-colors"
+                    >
+                      Criar conta
+                    </button>
+                  </>
+                )}
+              </div>
             </>
           ) : null}
         </div>
