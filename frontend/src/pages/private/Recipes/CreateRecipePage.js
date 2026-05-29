@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IonActionSheet, IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonBackButton, IonButtons, IonInput, IonTextarea, IonButton } from '@ionic/react';
+import { IonActionSheet, IonSelect, IonSelectOption, IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonBackButton, IonButtons, IonInput, IonTextarea, IonButton } from '@ionic/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { camera, image, images, document as fileIcon } from 'ionicons/icons';
 import api from '../../../components/AxiosInstance';
@@ -15,6 +15,11 @@ function CreateRecipePage() {
   const [category, setCategory] = useState('');
   const [ingredients, setIngredients] = useState('');
   const [instructions, setInstructions] = useState('');
+  const [servings, setServings] = useState('');
+  const [difficulty, setDifficulty] = useState('');
+  const [prepTime, setPrepTime] = useState('');
+  const [cookTime, setCookTime] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
 
   const [showImageSheet, setShowImageSheet] = useState(false);
   const [imageName, setImageName] = useState('');
@@ -34,8 +39,16 @@ function CreateRecipePage() {
       setTitle(recipe.title || '');
       setDescription(recipe.description || '');
       setCategory(recipe.category || '');
-      setIngredients(Array.isArray(recipe.ingredients) ? recipe.ingredients.join('\n') : recipe.ingredients || '');
-      setInstructions(Array.isArray(recipe.instructions) ? recipe.instructions.join('\n') : recipe.instructions || '');
+      setIngredients(
+        Array.isArray(recipe.ingredients)
+          ? recipe.ingredients.join('\n')
+          : recipe.ingredients || ''
+      );
+      setInstructions(
+        Array.isArray(recipe.instructions)
+          ? recipe.instructions.join('\n')
+          : recipe.instructions || ''
+      );
     }
   }, [location.state]);
 
@@ -45,7 +58,9 @@ function CreateRecipePage() {
         if (!user?.id) return;
         const { data } = await api.get(`/categories?userId=${user.id}`);
         if (data?.success) setCategories(data.categories || []);
-      } catch (err) {}
+      } catch (err) {
+        console.error(err);
+      }
     }
     loadCategories();
   }, [user]);
@@ -78,7 +93,6 @@ function CreateRecipePage() {
   const handleImageChange = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     setImageFile(file);
     setImageName(file.name);
     setSelectedImage(null);
@@ -88,19 +102,17 @@ function CreateRecipePage() {
   const handleFetchImages = async () => {
     try {
       setLoadingImage(true);
-
-      const query = `${title || "food"}`;
+      const query = `${title || 'food'}`;
       const { data } = await api.get(
         `/analysisVideo/image-suggestions?query=${encodeURIComponent(query)}`
       );
-
       if (data.success) {
         setSuggestedImages(data.images);
         setImageFile(null);
         setImageName('');
       }
     } catch (err) {
-      setError("Erro ao buscar imagens do Pexels");
+      setError('Erro ao buscar imagens do Pexels');
     } finally {
       setLoadingImage(false);
     }
@@ -117,7 +129,7 @@ function CreateRecipePage() {
       const { data } = await api.post('/categories', { userId: user.id, name });
       if (data?.success) {
         const newCat = data.category;
-        setCategories(prev => [newCat, ...prev.filter(c => c.id !== newCat.id)]);
+        setCategories((prev) => [newCat, ...prev.filter((c) => c.id !== newCat.id)]);
         setCategory(newCat.name);
       }
     } catch (err) {
@@ -128,17 +140,14 @@ function CreateRecipePage() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
-
     if (!user?.id) {
       setError('Usuário não encontrado. Faça login e tente novamente.');
       return;
     }
-
     if (!title.trim() || !ingredients.trim() || !instructions.trim()) {
       setError('Título, ingredientes e instruções são obrigatórios.');
       return;
     }
-
     setLoading(true);
     try {
       const formData = new FormData();
@@ -148,11 +157,12 @@ function CreateRecipePage() {
       formData.append('categoryName', category.trim() || '');
       formData.append('ingredients', ingredients.trim());
       formData.append('instructions', instructions.trim());
-      if (imageFile) {
-        formData.append('image', imageFile);
-      } else if (selectedImage) {
-        formData.append('imageUrl', selectedImage);
-      }
+      formData.append('servings', servings || '');
+      formData.append('difficulty', difficulty || '');
+      formData.append('prepTime', prepTime || '');
+      formData.append('cookTime', cookTime || '');
+      formData.append('videoUrl', videoUrl.trim() || '');
+      if (imageFile) formData.append('image', imageFile);
 
       const { data } = await api.post('/recipes', formData);
       if (data.success) {
@@ -178,133 +188,254 @@ function CreateRecipePage() {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding" fullscreen style={{ '--padding-bottom': '65px' }}>
-        <div className="max-w-3xl mx-auto space-y-5" style={{ paddingBottom: '60px' }}>
-          <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+      <IonContent
+        className="ion-padding"
+        fullscreen
+        style={{ '--background': '#f9fafb', '--padding-bottom': '100px' }}
+      >
+        <div className="max-w-3xl mx-auto space-y-6 pb-20">
+          <div className="bg-white rounded-2xl shadow-sm p-6 space-y-6">
             <div>
-              <h2 className="text-2xl font-bold">Criar Nova Receita</h2>
-              <p className="text-sm text-gray-600">Preencha os detalhes e salve no seu livro de receitas.</p>
+              <h2 className="text-2xl font-bold text-gray-900">Nova Receita</h2>
+              <p className="text-sm text-gray-500 mt-1">Preencha os detalhes da sua receita</p>
             </div>
 
             {error && (
-              <div className="rounded bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
                 {error}
               </div>
             )}
 
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <div>
-                <label className="block text-sm font-medium mb-2">Título</label>
-                <div className="bg-gray-50 border border-gray-200 rounded p-2">
-                  <IonInput
-                    value={title}
-                    onIonInput={(e) => setTitle(e.detail.value)}
-                    placeholder="Nome da receita"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Categoria (opcional)</label>
-                <div className="flex gap-2">
-                  <div className="flex-1 bg-gray-50 border border-gray-200 rounded p-2">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Basic Info */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Título</label>
+                  <div className="bg-gray-50 border border-gray-300 rounded-xl p-3">
                     <IonInput
-                      value={category}
-                      onIonInput={(e) => setCategory(e.detail.value)}
-                      placeholder="Digite ou escolha uma categoria existente"
+                      value={title}
+                      onIonInput={(e) => setTitle(e.detail.value)}
+                      placeholder="Ex: Bolo de Chocolate"
+                      style={{
+                        '--padding-start': '14px',
+                        '--padding-end': '14px',
+                        '--padding-top': '10px',
+                        '--padding-bottom': '10px',
+                        '--placeholder-color': '#9ca3af',
+                        '--color': '#111827',
+                      }}
                     />
                   </div>
-                  <div>
-                    <button type="button" onClick={handleCreateCategory} className="rounded border px-3 py-2 bg-white text-sm text-gray-700 hover:bg-blue-50">Criar</button>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Categoria (opcional)</label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 bg-gray-50 border border-gray-300 rounded-xl p-3">
+                      <IonInput
+                        value={category}
+                        onIonInput={(e) => setCategory(e.detail.value)}
+                        placeholder="Ex: Sobremesas"
+                        style={{
+                          '--padding-start': '14px',
+                          '--padding-end': '14px',
+                          '--padding-top': '10px',
+                          '--padding-bottom': '10px',
+                          '--placeholder-color': '#9ca3af',
+                          '--color': '#111827',
+                        }}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCreateCategory}
+                      className="px-4 py-2 rounded-xl border border-blue-600 text-blue-600 font-medium text-sm hover:bg-blue-50 transition-colors"
+                    >
+                      Criar
+                    </button>
+                  </div>
+                  {categories.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {categories.map((cat) => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setCategory(cat.name)}
+                          className="text-xs bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded-full transition-colors"
+                        >
+                          {cat.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Meta Info Row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Porções</label>
+                  <div className="bg-gray-50 border border-gray-300 rounded-xl p-3">
+                    <IonInput
+                      type="number"
+                      value={servings}
+                      onIonInput={(e) => setServings(e.detail.value)}
+                      placeholder="4"
+                      style={{
+                        '--padding-start': '14px',
+                        '--padding-end': '14px',
+                        '--padding-top': '10px',
+                        '--padding-bottom': '10px',
+                        '--placeholder-color': '#9ca3af',
+                        '--color': '#111827',
+                      }}
+                    />
                   </div>
                 </div>
-                {categories.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {categories.map((cat) => (
-                      <button
-                        type="button"
-                        key={cat.id}
-                        onClick={() => setCategory(cat.name)}
-                        className="rounded-full border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 hover:bg-blue-50"
-                      >
-                        {cat.name}
-                      </button>
-                    ))}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Dificuldade</label>
+                  <div className="bg-gray-50 border border-gray-300 rounded-xl p-3">
+                    <IonSelect
+                      value={difficulty}
+                      onIonChange={(e) => setDifficulty(e.detail.value)}
+                      placeholder="Selecione"
+                      style={{ '--padding-start': '14px', '--padding-end': '14px' }}
+                    >
+                      <IonSelectOption value="Fácil">Fácil</IonSelectOption>
+                      <IonSelectOption value="Médio">Médio</IonSelectOption>
+                      <IonSelectOption value="Difícil">Difícil</IonSelectOption>
+                    </IonSelect>
                   </div>
-                )}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Foto da Receita (opcional)</label>
-                <IonButton expand="block" onClick={() => setShowImageSheet(true)}>
-                  Escolher imagem
-                </IonButton>
-                {imageName && (
-                  <p className="mt-2 text-sm text-gray-600">Imagem selecionada: {imageName}</p>
-                )}
-              </div>
-
-               {suggestedImages.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 mt-3">
-                    {suggestedImages.map((img) => (
-                      <div
-                        key={img.id}
-                        onClick={() => setSelectedImage(img.full)}
-                        className={`border rounded overflow-hidden cursor-pointer ${
-                          selectedImage === img.full ? "border-blue-500" : ""
-                        }`}
-                      >
-                        <img src={img.small} className="w-full h-32 object-cover" />
-                      </div>
-                    ))}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tempo de Prep (min)</label>
+                  <div className="bg-gray-50 border border-gray-300 rounded-xl p-3">
+                    <IonInput
+                      type="number"
+                      value={prepTime}
+                      onIonInput={(e) => setPrepTime(e.detail.value)}
+                      placeholder="15"
+                      style={{
+                        '--padding-start': '14px',
+                        '--padding-end': '14px',
+                        '--padding-top': '10px',
+                        '--padding-bottom': '10px',
+                        '--placeholder-color': '#9ca3af',
+                        '--color': '#111827',
+                      }}
+                    />
                   </div>
-                )}
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Descrição</label>
-                <div className="bg-gray-50 border border-gray-200 rounded p-2">
-                  <IonTextarea
-                    value={description}
-                    onIonInput={(e) => setDescription(e.detail.value)}
-                    placeholder="Breve descrição"
-                    rows={3}
-                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tempo de Cozimento (min)</label>
+                  <div className="bg-gray-50 border border-gray-300 rounded-xl p-3">
+                    <IonInput
+                      type="number"
+                      value={cookTime}
+                      onIonInput={(e) => setCookTime(e.detail.value)}
+                      placeholder="30"
+                      style={{
+                        '--padding-start': '14px',
+                        '--padding-end': '14px',
+                        '--padding-top': '10px',
+                        '--padding-bottom': '10px',
+                        '--placeholder-color': '#9ca3af',
+                        '--color': '#111827',
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Ingredientes</label>
-                <div className="bg-gray-50 border border-gray-200 rounded p-2">
-                  <IonTextarea
-                    value={ingredients}
-                    onIonInput={(e) => setIngredients(e.detail.value)}
-                    placeholder="Um ingrediente por linha"
-                    rows={5}
-                    autoGrow={true}
-                  />
+              {/* Image & Video */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Foto da Receita</label>
+                  <IonButton expand="block" className="w-full border border-gray-300 rounded-xl p-3 text-sm bg-white" onClick={() => setShowImageSheet(true)}>
+                    Escolher imagem
+                  </IonButton>
+                  {imageName && <p className="text-xs text-gray-500 mt-1">Selecionado: {imageName}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Link do Vídeo (opcional)</label>
+                  <div className="bg-gray-50 border border-gray-300 rounded-xl p-3">
+                    <IonInput
+                      value={videoUrl}
+                      onIonInput={(e) => setVideoUrl(e.detail.value)}
+                      placeholder="https://youtube.com/..."
+                      type="url"
+                      style={{
+                        '--padding-start': '14px',
+                        '--padding-end': '14px',
+                        '--padding-top': '10px',
+                        '--padding-bottom': '10px',
+                        '--placeholder-color': '#9ca3af',
+                        '--color': '#111827',
+                      }}
+                    />
+                  </div>
+                </div>
+                {/* Removido bloco duplicado de categorias */}
+              </div>
+
+              {/* Description, Ingredients, Instructions */}
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                  <div className="bg-gray-50 border border-gray-300 rounded-xl p-4">
+                    <IonTextarea
+                      value={description}
+                      onIonInput={(e) => setDescription(e.detail.value)}
+                      placeholder="Uma breve descrição da receita..."
+                      rows={3}
+                      style={{ '--padding-start': '14px', '--padding-end': '14px', '--padding-top': '10px' }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Ingredientes</label>
+                  <div className="bg-gray-50 border border-gray-300 rounded-xl p-4">
+                    <IonTextarea
+                      value={ingredients}
+                      onIonInput={(e) => setIngredients(e.detail.value)}
+                      placeholder="1 xícara de farinha&#10;2 ovos&#10;..."
+                      rows={6}
+                      style={{ '--padding-start': '14px', '--padding-end': '14px', '--padding-top': '10px' }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Modo de Preparo</label>
+                  <div className="bg-gray-50 border border-gray-300 rounded-xl p-4">
+                    <IonTextarea
+                      value={instructions}
+                      onIonInput={(e) => setInstructions(e.detail.value)}
+                      placeholder="1. Misture os ingredientes secos...&#10;2. ..."
+                      rows={8}
+                      style={{ '--padding-start': '14px', '--padding-end': '14px', '--padding-top': '10px' }}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Modo de Preparação</label>
-                <div className="bg-gray-50 border border-gray-200 rounded p-2">
-                  <IonTextarea
-                    value={instructions}
-                    onIonInput={(e) => setInstructions(e.detail.value)}
-                    placeholder="Instruções passo a passo"
-                    rows={5}
-                    autoGrow={true}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <IonButton className="custom-btn flex-1" type="submit" disabled={loading}>
-                  {loading ? 'Salvando...' : 'Guardar'}
-                </IonButton>
-                <IonButton className="custom-btn-secondary flex-1" type="button" onClick={() => navigate('/home')}>
+              <div className="flex flex-col gap-3 pt-6">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-2.5 rounded-xl bg-blue-600 text-white font-medium text-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Salvando...' : 'Guardar Receita'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/home')}
+                  className="w-full py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium text-sm hover:bg-gray-50 transition-colors"
+                >
                   Cancelar
-                </IonButton>
+                </button>
               </div>
             </form>
           </div>
