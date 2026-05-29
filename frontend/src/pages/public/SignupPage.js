@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonInput, IonButton } from '@ionic/react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import authApi from '../../hooks/authApi.tsx';
 
@@ -15,6 +15,8 @@ function SignupPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const sharedToken = new URLSearchParams(location.search).get('token') || '';
   const { signup } = authApi(() => {});
 
   const updateField = (field, value) => {
@@ -51,7 +53,7 @@ function SignupPage() {
       setSuccess('Cadastro realizado com sucesso. Verifique seu e-mail e, depois, faça login.');
 
       setTimeout(() => {
-        navigate('/login');
+        navigate(`/login${sharedToken ? `?shareToken=${encodeURIComponent(sharedToken)}` : ''}`);
       }, 1800);
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || 'Não foi possível concluir o cadastro.';
@@ -138,7 +140,7 @@ function SignupPage() {
           </IonButton>
 
           <p className="text-sm text-gray-600 text-center">
-            Já tem conta? <Link to="/login" className="text-blue-600 font-medium">Entrar</Link>
+               Já tem conta? <Link to={`/login${sharedToken ? `?shareToken=${encodeURIComponent(sharedToken)}` : ''}`} className="text-blue-600 font-medium">Entrar</Link>
           </p>
         </div>
       </IonContent>

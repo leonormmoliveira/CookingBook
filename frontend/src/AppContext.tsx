@@ -14,7 +14,7 @@ interface AuthContextType {
     user: User | null;
     isAuthenticated: () => boolean;
     Login: (userData: User) => void;
-    logout: () => void;
+    Logout: () => void;
     UpdateUser:(user: Partial<User>)=>void;
 }
 
@@ -31,7 +31,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(userData);
     };
 
-    const logout = () => {
+    const Logout = () => {
         setUser(null);
     };
 
@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, Login, logout, isAuthenticated, UpdateUser }}>
+        <AuthContext.Provider value={{ user, Login, Logout, isAuthenticated, UpdateUser }}>
             {children}
         </AuthContext.Provider>
     );

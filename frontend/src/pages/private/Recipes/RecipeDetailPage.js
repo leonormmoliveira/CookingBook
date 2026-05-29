@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonIcon, IonInput, IonTextarea } from '@ionic/react';
-import { arrowBack, heart, heartOutline } from 'ionicons/icons';
+import { arrowBack, heart, heartOutline, shareSocial } from 'ionicons/icons';
 import { getRecipeById, updateRecipe, deleteRecipe } from '../../../services/recipeService';
 import { addFavorite, removeFavorite } from '../../../services/favoriteService';
 import { useAuth } from '../../../AppContext.tsx';
+import api from '../../../components/AxiosInstance';
 
 function RecipeDetailPage() {
   const { id } = useParams();
@@ -23,6 +24,9 @@ function RecipeDetailPage() {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [shareError, setShareError] = useState('');
+  const [shareLoading, setShareLoading] = useState(false);
 
   useEffect(() => {
     async function loadRecipe() {
@@ -137,6 +141,31 @@ function RecipeDetailPage() {
     }
   };
 
+  const handleShare = async () => {
+    setShareLoading(true);
+    setShareError('');
+    setShareUrl('');
+
+    if (!user?.id) {
+      setShareError('Faça login para gerar o link de compartilhamento.');
+      setShareLoading(false);
+      return;
+    }
+
+    try {
+      const { data } = await api.post(`/sharing/${id}`, { userId: user.id });
+      setShareUrl(data.shareUrl);
+
+      if (navigator.clipboard && data.shareUrl) {
+        await navigator.clipboard.writeText(data.shareUrl);
+      }
+    } catch (err) {
+      setShareError(err?.response?.data?.message || 'Não foi possível gerar o link de compartilhamento.');
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
   return (
     <IonPage>
       <IonHeader>
@@ -156,16 +185,40 @@ function RecipeDetailPage() {
           <IonButtons slot="end">
             {!editing && recipe && (
               <>
-                <IonButton onClick={handleEdit}>Editar</IonButton>
-                <IonButton color="danger" onClick={handleDelete}>Excluir</IonButton>
+               {(() => {
+                  const isOwner = user?.id && recipe.userId === user.id;
+                  return isOwner ? (
+                    <>
+                      <IonButton onClick={handleEdit}>
+                        Editar
+                      </IonButton>
+
+                      <IonButton
+                        color="danger"
+                        onClick={handleDelete}
+                        disabled={saving}
+                      >
+                        {saving ? 'Excluindo...' : 'Excluir'}
+                      </IonButton>
+
+                      <IonButton
+                        onClick={handleShare}
+                        disabled={shareLoading}
+                      >
+                        <IonIcon icon={shareSocial} slot="start" />
+                        {shareLoading ? 'Gerando...' : 'Compartilhar'}
+                      </IonButton>
+                    </>
+                  ) : null;
+                })()}
               </>
             )}
           </IonButtons>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent fullscreen className="p-4">
-        <div className="max-w-3xl mx-auto space-y-4">
+      <IonContent className="ion-padding" fullscreen style={{ '--padding-bottom': '65px' }}>
+        <div className="max-w-3xl mx-auto space-y-4" style={{ paddingBottom: '60px' }}>
           {loading ? (
             <div className="rounded-lg bg-white p-6 shadow-sm text-center text-gray-500">Carregando receita...</div>
           ) : error ? (
@@ -185,9 +238,6 @@ function RecipeDetailPage() {
                   {!editing && (
                     <div className="flex items-center gap-3 text-right text-sm text-gray-500">
                       <IonButton fill="clear" size="small" onClick={async () => {
-                        const storedUser = localStorage.getItem('user');
-                        if (!storedUser) return;
-                        const user = JSON.parse(storedUser);
                         if (!user?.id) return;
                         try {
                           if (isFavorite) {
@@ -211,6 +261,18 @@ function RecipeDetailPage() {
                     </div>
                   )}
                 </div>
+
+                {shareUrl ? (
+                  <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+                    Link de compartilhamento gerado e copiado para a área de transferência.
+                    <div className="mt-2 break-all text-blue-700">
+                      <a href={shareUrl} target="_blank" rel="noreferrer">{shareUrl}</a>
+                    </div>
+                  </div>
+                ) : null}
+                {shareError ? (
+                  <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{shareError}</div>
+                ) : null}
 
                 {editing ? (
                   <div className="space-y-4">

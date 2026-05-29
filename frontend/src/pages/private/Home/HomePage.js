@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonSearchbar, IonFab, IonFabButton, IonIcon, IonModal, IonList, IonItem, IonLabel, IonAlert } from '@ionic/react';
+import { IonPage, IonButtons, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonSearchbar, IonFab, IonFabButton, IonIcon, IonModal, IonList, IonItem, IonLabel, IonAlert } from '@ionic/react';
 import { add, heart, heartOutline } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../components/AxiosInstance';
 import { addFavorite, removeFavorite } from '../../../services/favoriteService';
 import { useAuth } from '../../../AppContext.tsx';
+import authApi from '../../../hooks/authApi.tsx';
+import { logOut, heartSharp } from 'ionicons/icons';
 
 function HomePage() {
   const [searchText, setSearchText] = useState('');
@@ -15,7 +17,18 @@ function HomePage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showVideoAlert, setShowVideoAlert] = useState(false);
   const navigate = useNavigate();
-  const {user} = useAuth();
+  const { logout } = authApi(() => {});
+  const {user, Logout} = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      Logout();
+      navigate('/login');
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+  };
 
   useEffect(() => {
     async function loadInitialData() {
@@ -138,11 +151,16 @@ function HomePage() {
       <IonHeader>
         <IonToolbar>
           <IonTitle className="text-2xl font-bold">CookingBook</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={handleLogout} title="Sair">
+              <IonIcon icon={logOut} />
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="p-4" fullscreen>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+       <IonContent className="ion-padding" fullscreen style={{ '--padding-bottom': '85px' }}>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6" style={{ paddingBottom: '80px' }}>
           <div className="mb-6 space-y-4">
             <IonSearchbar
               value={searchText}
@@ -159,15 +177,19 @@ function HomePage() {
                 Todos
               </button>
               {categories.map((category) => (
-                <button
-                  key={category.id}
-                  type="button"
-                  className={`rounded-full border px-4 py-2 text-sm font-medium ${selectedCategory === category.name ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200'}`}
-                  onClick={() => setSelectedCategory(category.name)}
-                >
-                  {category.name}
-                </button>
-              ))}
+                  <button
+                    key={category.id}
+                    type="button"
+                    className={`rounded-full border px-4 py-2 text-sm font-medium ${selectedCategory === category.name ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200'}`}
+                    onClick={() => setSelectedCategory(category.name)}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </div>
+              <IonButton fill="clear" className="text-gray-700" onClick={() => navigate('/favorites')}>
+                <IonIcon icon={heartSharp} slot="icon-only" />
+              </IonButton>
             </div>
           </div>
 
@@ -220,7 +242,6 @@ function HomePage() {
               )}
             </div>
           )}
-        </div>
 
         <IonFab vertical="bottom" horizontal="end" slot="fixed" style={{ zIndex: 1000, right: 16, bottom: 16 }}>
           <IonFabButton onClick={handleCreateClick} style={{ zIndex: 1001, background: '#0066cc', color: '#fff', boxShadow: '0 6px 18px rgba(0,0,0,0.12)' }}>
