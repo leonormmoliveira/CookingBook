@@ -455,28 +455,6 @@ const RecipeController = {
     }
   },
 
-  analyzeVideo: async (req, res) => {
-    const { userId, videoUrl } = req.body;
-    if (!userId || !videoUrl) {
-      return res.status(400).json({ success: false, message: 'userId e videoUrl são obrigatórios.' });
-    }
-
-    try {
-      const result = await fetchOpenAIRecipe(videoUrl.trim());
-      const analysisResult = JSON.stringify(result);
-      await pool.query('INSERT INTO video_analysis (user_id, video_url, analysis_result) VALUES (?, ?, ?)', [userId, videoUrl.trim(), analysisResult]);
-
-      if (!result.parsed && !result.raw?.trim()) {
-        return res.status(500).json({ success: false, message: 'OpenAI não retornou um resultado de receita válido. Tente novamente.' });
-      }
-
-      return res.json({ success: true, result });
-    } catch (err) {
-      console.error(err);
-      return res.status(500).json({ success: false, message: err.message || 'Erro na análise de vídeo.' });
-    }
-  },
-
   getRecipeImageSuggestions: async (req, res) => {
     try {
       const { query } = req.query;

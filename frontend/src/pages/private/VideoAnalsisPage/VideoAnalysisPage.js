@@ -5,6 +5,7 @@ import {
 } from '@ionic/react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../../components/AxiosInstance';
+import { useAuth } from '../../../AppContext.tsx';
 
 function VideoAnalysisPage() {
   const [videoUrl, setVideoUrl] = useState('');
@@ -13,6 +14,7 @@ function VideoAnalysisPage() {
   const [error, setError] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -28,12 +30,6 @@ function VideoAnalysisPage() {
     }
     setLoading(true);
     try {
-      const stored = localStorage.getItem('user');
-      if (!stored) {
-        setError('Faça login para usar a análise de vídeo.');
-        return;
-      }
-      const user = JSON.parse(stored);
       const { data } = await api.post('/video-analysis', {
         userId: user.id,
         videoUrl: videoUrl.trim(),
