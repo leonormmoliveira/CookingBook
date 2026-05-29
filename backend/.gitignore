@@ -1,6 +1,6 @@
 node_modules/
 .env
 .env.local
-firebase-service-account.json
+config/firebase-service-account.json
 *.log
 uploads/
