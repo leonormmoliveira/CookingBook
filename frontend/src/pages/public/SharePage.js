@@ -4,37 +4,27 @@ import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonIc
 import { homeOutline } from 'ionicons/icons';
 import api from '../../components/AxiosInstance';
 import { createRecipe } from '../../services/recipeService';
+import { useAuth } from "../../AppContext.tsx";
 
 function SharePage() {
   const location = useLocation();
   const navigate = useNavigate();
   const token = new URLSearchParams(location.search).get('token');
 
+  const { user } = useAuth();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [preview, setPreview] = useState(null);
   const [recipe, setRecipe] = useState(null);
-  const [user, setUser] = useState(null);
   const [cloning, setCloning] = useState(false);
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
     loadShareData();
-  }, []);
+  }, [token, user]);
 
   const loadShareData = async () => {
-    const stored = localStorage.getItem('user');
-    let currentUser = null;
-
-    if (stored) {
-      try {
-        currentUser = JSON.parse(stored);
-        setUser(currentUser);
-      } catch (err) {
-        console.error('Invalid stored user', err);
-      }
-    }
-
     if (!token) {
       setError('Token de compartilhamento ausente.');
       setLoading(false);
@@ -43,14 +33,15 @@ function SharePage() {
 
     setLoading(true);
     setError('');
-
     try {
       const validation = await api.get(`/sharing/validate?token=${encodeURIComponent(token)}`);
       setPreview(validation.data.recipe);
 
-      if (currentUser?.id) {
-        const details = await api.get(`/sharing/recipe?token=${encodeURIComponent(token)}&userId=${currentUser.id}`);
+      if (user?.id) {
+        const details = await api.get(`/sharing/recipe?token=${encodeURIComponent(token)}&userId=${user.id}`);
         setRecipe(details.data.recipe);
+      }else {
+        setRecipe(validation.data.recipe);
       }
     } catch (err) {
       console.error('SharePage load error:', err);

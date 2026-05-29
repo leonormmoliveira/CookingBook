@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonIcon } from '@ionic/react';
-import { heart, heartOutline, arrowBack } from 'ionicons/icons';
+import { heart, arrowBack } from 'ionicons/icons';
 import { getFavorites, removeFavorite } from '../../../services/favoriteService';
 import { useAuth } from '../../../AppContext.tsx';
 
