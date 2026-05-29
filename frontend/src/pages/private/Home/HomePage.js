@@ -230,9 +230,9 @@ function HomePage() {
       <IonContent
         className="ion-padding"
         fullscreen
-        style={{ '--background': '#f9fafb', '--padding-bottom': '140px' }}
+        style={{ '--background': '#f9fafb', '--padding-bottom': '180px' }}
       >
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-10">
           {/* Search */}
           <div className="mb-4 mt-2">
             <IonSearchbar
@@ -256,8 +256,8 @@ function HomePage() {
                 type="button"
                 onClick={() => setSelectedCategory('Todos')}
                 className={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${selectedCategory === 'Todos'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
                   }`}
               >
                 Todos
@@ -268,8 +268,8 @@ function HomePage() {
                   type="button"
                   onClick={() => setSelectedCategory(category.name)}
                   className={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${selectedCategory === category.name
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
                     }`}
                 >
                   {category.name}

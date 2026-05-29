@@ -40,7 +40,7 @@ function SharePage() {
       if (user?.id) {
         const details = await api.get(`/sharing/recipe?token=${encodeURIComponent(token)}&userId=${user.id}`);
         setRecipe(details.data.recipe);
-      }else {
+      } else {
         setRecipe(validation.data.recipe);
       }
     } catch (err) {
@@ -112,8 +112,8 @@ function SharePage() {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding" fullscreen style={{ '--background': '#f9fafb', '--padding-bottom': '100px' }}>
-        <div className="max-w-3xl mx-auto space-y-6 pb-10">
+      <IonContent className="ion-padding" fullscreen style={{ '--background': '#f9fafb', '--padding-bottom': '140px' }}>
+        <div className="max-w-3xl mx-auto space-y-6 pb-20">
           {loading ? (
             <div className="rounded-2xl bg-white p-6 shadow-sm text-center text-gray-500">Carregando receita...</div>
           ) : error && !recipe ? (
