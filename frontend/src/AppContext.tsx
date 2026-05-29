@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             try {
                 const token = await firebaseUser.getIdToken();
                 // opcional: validar no backend e buscar perfil MySQL
-                const { data } = await api.post("/login", {
+                const { data } = await api.post("/auth/login", {
                     idToken: token
                 });
 
