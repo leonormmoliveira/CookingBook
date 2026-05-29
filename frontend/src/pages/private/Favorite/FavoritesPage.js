@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonBackButton, IonButtons, IonButton } from '@ionic/react';
+import { useNavigate} from 'react-router-dom';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton } from '@ionic/react';
 import { getFavorites, removeFavorite } from '../../../services/favoriteService';
 import { useAuth } from '../../../AppContext.tsx';
 
@@ -46,7 +46,9 @@ function FavoritesPage() {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/home" />
+            <IonButton onClick={() => navigate(-1)}>
+              Voltar
+            </IonButton>
           </IonButtons>
           <IonTitle>Receitas Favoritas</IonTitle>
         </IonToolbar>
