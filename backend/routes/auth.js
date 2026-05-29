@@ -1,12 +1,11 @@
-const express = require("express")
-const app = express()
-app.use(express.json())
+const express = require("express");
+const router = express.Router();
 
-const AuthController = require("../controllers/AuthController")
+const AuthController = require("../controllers/AuthController");
 
-app.post("/register",AuthController.register)
-app.post("/login", AuthController.login)
-app.post("/logout", AuthController.logout)
-app.get('/verify-email-server', AuthController.verifyEmailServer)
+router.post("/register", AuthController.register);
+router.post("/login", AuthController.login);
+router.post("/logout", AuthController.logout);
+router.get("/verify-email-server", AuthController.verifyEmailServer);
 
-module.exports = app
+module.exports = router;

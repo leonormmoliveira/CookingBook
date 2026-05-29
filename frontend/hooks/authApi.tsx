@@ -7,10 +7,9 @@ export interface User{
   email: string;
 }
 
-export const authApi = (Login: (userData: any) => void) => {
+export const authApi = () => {
   const login = async (idToken: string): Promise<any> => {
     const { data } = await api.post("/login", { idToken });
-    Login(data.user);
     return data;
   };
 
@@ -20,7 +19,6 @@ export const authApi = (Login: (userData: any) => void) => {
   };
 
   const logout = async () => {
-    Login(null);
     await api.post("/logout");
   };
 
