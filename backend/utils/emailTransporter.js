@@ -67,7 +67,7 @@ transporter.verify((err, success) => {
     console.warn('- For Outlook: set OUTLOOK_USER and OUTLOOK_PASS, and EMAIL_SERVICE=outlook if needed.')
     console.warn('- Available env names checked: GMAIL_*, OUTLOOK_*, EMAIL_USER/EMAIL_PASS, EMAIL_FROM_NAME, EMAIL_FROM_ADDRESS')
   } else {
-    console.info('Email transporter is ready (service='+emailService+')')
+    console.info('Email transporter is ready (service=' + emailService + ')')
   }
 })
 

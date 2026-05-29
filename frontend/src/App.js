@@ -14,11 +14,13 @@ import VideoAnalysisPage from './pages/private/VideoAnalsisPage/VideoAnalysisPag
 import LoginPage from './pages/public/LoginPage';
 import SignupPage from './pages/public/SignupPage';
 import SharePage from './pages/public/SharePage';
+import ForgotPasswordPage from './pages/public/ForgotPasswordPage';
+import ResetPasswordPage from './pages/public/ResetPasswordPage';
 
 setupIonicReact();
 
 function SplashScreen() {
-    return (
+  return (
     <div
       style={{
         height: '100vh',
@@ -49,6 +51,8 @@ function App() {
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/home" element={<HomePage />} />
             <Route path="/recipe/:id" element={<RecipeDetailPage />} />
             <Route path="/create" element={<CreateRecipePage />} />

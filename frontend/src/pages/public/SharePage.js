@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonIcon } from '@ionic/react';
 import { homeOutline } from 'ionicons/icons';
@@ -15,16 +15,11 @@ function SharePage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [preview, setPreview] = useState(null);
   const [recipe, setRecipe] = useState(null);
   const [cloning, setCloning] = useState(false);
   const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    loadShareData();
-  }, [token, user]);
-
-  const loadShareData = async () => {
+  const loadShareData = useCallback(async () => {
     if (!token) {
       setError('Token de compartilhamento ausente.');
       setLoading(false);
@@ -35,7 +30,6 @@ function SharePage() {
     setError('');
     try {
       const validation = await api.get(`/sharing/validate?token=${encodeURIComponent(token)}`);
-      setPreview(validation.data.recipe);
 
       if (user?.id) {
         const details = await api.get(`/sharing/recipe?token=${encodeURIComponent(token)}&userId=${user.id}`);
@@ -49,7 +43,11 @@ function SharePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, user]);
+
+  useEffect(() => {
+    loadShareData();
+  }, [loadShareData]);
 
   const handleClone = async () => {
     if (!user) {

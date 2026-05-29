@@ -2,8 +2,11 @@ const fs = require('fs');
 const sendVerificationEmail = require("../utils/sendVerificationEmail");
 const generateInviteToken = require("../utils/generateInviteToken");
 const verifyInviteToken = require("../utils/verifyInviteToken");
+const { generateResetToken, verifyResetToken } = require("../utils/resetToken");
+const sendPasswordResetEmail = require("../utils/sendPasswordResetEmail");
 const pool = require("../config/database");
 const admin = require("../config/firebase");
+
 
 const AuthController = {
     login: async (req, res) => {
@@ -20,7 +23,7 @@ const AuthController = {
                 });
             }
 
-            let [rows] = await pool.query( 'SELECT * FROM users WHERE authUid = ?', [decoded.uid] );
+            let [rows] = await pool.query('SELECT * FROM users WHERE authUid = ?', [decoded.uid]);
             let user = rows[0];
 
             // Se o usuário existe no Firebase mas não no MySQL, cria um registro básico automaticamente
@@ -47,9 +50,9 @@ const AuthController = {
 
                 user = newRows[0];
             }
-            return res.json({success: true, user, message: 'Login efetuado com sucesso' });
+            return res.json({ success: true, user, message: 'Login efetuado com sucesso' });
         } catch (err) {
-            return res.status(401).json({success: false, message: 'Token inválido ou expirado'});
+            return res.status(401).json({ success: false, message: 'Token inválido ou expirado' });
         }
     },
 
@@ -61,7 +64,7 @@ const AuthController = {
             // Verifica se já existe usuário com o email
             const [existing] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
             if (existing.length > 0) {
-                return res.status(400).json({success: false, message: "Já existe um usuário com esse email." });
+                return res.status(400).json({ success: false, message: "Já existe um usuário com esse email." });
             }
 
             // Cria usuário no Firebase
@@ -117,13 +120,13 @@ const AuthController = {
             if (firebaseUser?.uid) {
                 await admin.auth().deleteUser(firebaseUser.uid);
             }
-            return res.status(500).json({success: false, message: "Erro ao criar o usuário", error: err.message });
+            return res.status(500).json({ success: false, message: "Erro ao criar o usuário", error: err.message });
         }
     },
 
     logout: async (req, res) => {
         res.clearCookie("auth", { httpOnly: true, secure: false, sameSite: "Lax" });
-        return res.status(200).send({success: true, message: "Logout efetuado com sucesso" });
+        return res.status(200).send({ success: true, message: "Logout efetuado com sucesso" });
     },
 
     verifyEmailServer: async (req, res) => {
@@ -146,7 +149,66 @@ const AuthController = {
             console.error('verifyEmailServer error:', err);
             return res.status(400).send('Token inválido ou expirado');
         }
+    },
+
+    forgotPassword: async (req, res) => {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email é obrigatório.' });
+        }
+
+        try {
+            // Verifica se o email existe no Firebase (pelo email)
+            const firebaseUser = await admin.auth().getUserByEmail(email);
+            if (!firebaseUser) {
+                // Por segurança, não revelamos se o email existe ou não
+                return res.json({ success: true, message: 'Se o email existir, receberá um link de recuperação.' });
+            }
+
+            const uid = firebaseUser.uid;
+            // Gera token JWT com expiração curta (1 hora)
+            const resetToken = generateResetToken({ uid, email });
+
+            // Constrói o link para o frontend
+            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+            const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+            // Envia email com o link
+            await sendPasswordResetEmail(email, resetLink);
+
+            return res.json({ success: true, message: 'Se o email existir, receberá um link de recuperação.' });
+        } catch (err) {
+            // Se o erro for "user not found", tratamos da mesma forma (não revelar)
+            if (err.code === 'auth/user-not-found') {
+                return res.json({ success: true, message: 'Se o email existir, receberá um link de recuperação.' });
+            }
+            console.error('forgotPassword error:', err);
+            return res.status(500).json({ success: false, message: 'Erro ao processar pedido.' });
+        }
+    },
+
+    // Redefinir password com token
+    resetPassword: async (req, res) => {
+        const { token, newPassword } = req.body;
+        if (!token || !newPassword) {
+            return res.status(400).json({ success: false, message: 'Token e nova password são obrigatórios.' });
+        }
+
+        try {
+            const decoded = verifyResetToken(token);
+            const { uid } = decoded;
+
+            // Atualiza a password no Firebase Auth
+            await admin.auth().updateUser(uid, { password: newPassword });
+
+            return res.json({ success: true, message: 'Password atualizada com sucesso.' });
+        } catch (err) {
+            console.error('resetPassword error:', err);
+            return res.status(400).json({ success: false, message: 'Token inválido ou expirado.' });
+        }
     }
 };
+
+
 
 module.exports = AuthController;
