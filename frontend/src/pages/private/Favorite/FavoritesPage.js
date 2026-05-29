@@ -2,20 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonBackButton, IonButtons, IonButton } from '@ionic/react';
 import { getFavorites, removeFavorite } from '../../../services/favoriteService';
+import { useAuth } from '../../../AppContext.tsx';
 
 function FavoritesPage() {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     async function loadFavorites() {
-      const storedUser = localStorage.getItem('user');
-      if (!storedUser) return;
-      const user = JSON.parse(storedUser);
       if (!user?.id) return;
-
       try {
         setLoading(true);
         const data = await getFavorites(user.id);
@@ -29,16 +27,11 @@ function FavoritesPage() {
         setLoading(false);
       }
     }
-
     loadFavorites();
-  }, []);
+  }, [user]);
 
   const handleRemove = async (recipeId) => {
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) return;
-    const user = JSON.parse(storedUser);
     if (!user?.id) return;
-
     try {
       await removeFavorite(recipeId, user.id);
       setFavorites((current) => current.filter((item) => item.recipeId !== recipeId));

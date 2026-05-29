@@ -4,11 +4,12 @@ import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBu
 import { arrowBack, heart, heartOutline } from 'ionicons/icons';
 import { getRecipeById, updateRecipe, deleteRecipe } from '../../../services/recipeService';
 import { addFavorite, removeFavorite } from '../../../services/favoriteService';
+import { useAuth } from '../../../AppContext.tsx';
 
 function RecipeDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-
+  const { user } = useAuth();
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -26,9 +27,13 @@ function RecipeDetailPage() {
   useEffect(() => {
     async function loadRecipe() {
       setLoading(true);
+      if (!user?.id) {
+        setError('Faça login para visualizar a receita.');
+        setLoading(false);
+        return;
+      }
+
       try {
-        const storedUser = localStorage.getItem('user');
-        const user = storedUser ? JSON.parse(storedUser) : null;
         const { recipe: fetched } = await getRecipeById(id, user?.id);
         setRecipe(fetched);
         setTitle(fetched.title || '');
@@ -46,7 +51,7 @@ function RecipeDetailPage() {
     }
 
     loadRecipe();
-  }, [id]);
+  }, [id, user]);
 
   const handleEdit = () => {
     setEditing(true);
@@ -84,18 +89,10 @@ function RecipeDetailPage() {
       return;
     }
 
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
+    if (!user?.id) {
       setError('Usuário não encontrado. Faça login novamente.');
       return;
     }
-
-    const user = JSON.parse(storedUser);
-    if (!user?.id) {
-      setError('ID de usuário inválido. Faça login novamente.');
-      return;
-    }
-
     setSaving(true);
     setError('');
 

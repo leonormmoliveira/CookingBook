@@ -3,7 +3,7 @@ import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonInput, IonButt
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebaseConfig.ts';
-import { AuthProvider } from '../../AppContext.tsx';
+import { useAuth } from '../../AppContext.tsx';
 
 import authApi from '../../hooks/authApi.tsx';
 
@@ -14,15 +14,12 @@ function LoginPage() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { login } = authApi(() => {});
-  const { Login } = AuthProvider();
+  const { Login } = useAuth();
 
   const handleLogin = async () => {
     setError('');
 
     const trimmedEmail = String(email).trim();
-
-    
-
     if (!trimmedEmail || !password) {
       setError('Preencha o e-mail e a senha.');
       return;
@@ -32,11 +29,10 @@ function LoginPage() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, trimmedEmail, password);
+
       const idToken = await userCredential.user.getIdToken();
-
-      localStorage.setItem('token', idToken);
-
       const response = await login(idToken);
+      
       Login(response.user);
 
       navigate('/home');

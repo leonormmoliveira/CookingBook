@@ -4,6 +4,7 @@ import { add, heart, heartOutline } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../components/AxiosInstance';
 import { addFavorite, removeFavorite } from '../../../services/favoriteService';
+import { useAuth } from '../../../AppContext.tsx';
 
 function HomePage() {
   const [searchText, setSearchText] = useState('');
@@ -14,13 +15,11 @@ function HomePage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showVideoAlert, setShowVideoAlert] = useState(false);
   const navigate = useNavigate();
+  const {user} = useAuth();
 
   useEffect(() => {
     async function loadInitialData() {
-      const stored = localStorage.getItem('user');
-      if (!stored) return;
-      const user = JSON.parse(stored);
-
+      if (!user?.id) return;
       try {
         setLoading(true);
         const [recipesResponse, categoriesResponse] = await Promise.all([
@@ -36,9 +35,8 @@ function HomePage() {
         setLoading(false);
       }
     }
-
     loadInitialData();
-  }, []);
+  }, [user]);
 
   const handleCreateClick = () => {
     setShowCreateModal(true);
@@ -104,9 +102,6 @@ function HomePage() {
           className="absolute right-3 top-3 z-10"
           fill="clear"
           onClick={async () => {
-            const stored = localStorage.getItem('user');
-            if (!stored) return;
-            const user = JSON.parse(stored);
             if (!user?.id) return;
             try {
               if (recipe.isFavorite) {

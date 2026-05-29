@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonBackButton, IonButtons, IonInput, IonTextarea, IonButton } from '@ionic/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../../components/AxiosInstance';
+import { useAuth } from '../../../AppContext.tsx';
 
 function CreateRecipePage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -32,9 +34,6 @@ function CreateRecipePage() {
   useEffect(() => {
     async function loadCategories() {
       try {
-        const storedUser = localStorage.getItem('user');
-        if (!storedUser) return;
-        const user = JSON.parse(storedUser);
         if (!user?.id) return;
         const { data } = await api.get(`/categories?userId=${user.id}`);
         if (data?.success) setCategories(data.categories || []);
@@ -42,20 +41,17 @@ function CreateRecipePage() {
         // ignore failure to fetch categories
       }
     }
-
     loadCategories();
-  }, []);
+  }, [user]);
 
   const handleCreateCategory = async () => {
     const name = (category || '').trim();
     if (!name) return;
     try {
-      const storedUser = localStorage.getItem('user');
-      if (!storedUser) {
+      if (!user?.id) {
         setError('Faça login para criar categorias.');
         return;
       }
-      const user = JSON.parse(storedUser);
       const { data } = await api.post('/categories', { userId: user.id, name });
       if (data?.success) {
         const newCat = data.category;
@@ -83,15 +79,8 @@ function CreateRecipePage() {
     event.preventDefault();
     setError('');
 
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
-      setError('Usuário não encontrado. Faça login e tente novamente.');
-      return;
-    }
-
-    const user = JSON.parse(storedUser);
     if (!user?.id) {
-      setError('ID de usuário inválido. Faça login novamente.');
+      setError('Usuário não encontrado. Faça login e tente novamente.');
       return;
     }
 
@@ -114,7 +103,6 @@ function CreateRecipePage() {
       }
 
       const { data } = await api.post('/recipes', formData);
-
       if (data.success) {
         navigate('/home');
       } else {
