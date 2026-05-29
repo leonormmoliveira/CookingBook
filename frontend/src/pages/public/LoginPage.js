@@ -43,10 +43,17 @@ function LoginPage() {
         navigate('/home');
       }
     } catch (err) {
-      console.error('Login error:', err);
-      const firebaseCode = err?.code ? ` (${err.code})` : '';
+      if (err?.code?.includes('auth/')) {
+        setError('Erro de autenticação Firebase: ' + err.code);
+        return;
+      }
+      if (err?.response?.data?.code === 'EMAIL_NOT_VERIFIED') {
+        setError('Confirma o teu email antes de entrar.');
+        return;
+      }
+
       const message = err?.response?.data?.message || err?.message || 'Não foi possível fazer login.';
-      setError(`${message}${firebaseCode}`);
+      setError(message);
     } finally {
       setLoading(false);
     }

@@ -107,6 +107,7 @@ function RecipeDetailPage() {
       formData.append('description', description.trim() || '');
       formData.append('categoryName', categoryName.trim() || '');
       formData.append('ingredients', ingredients.trim());
+      
       formData.append('instructions', instructions.trim());
       if (imageFile) {
         formData.append('image', imageFile);
