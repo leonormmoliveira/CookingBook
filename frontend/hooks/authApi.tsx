@@ -1,5 +1,4 @@
 import api from "../components/AxiosInstance";
-import Cookies from 'js-cookie';
 
 export interface User{
   name: string;
@@ -8,11 +7,9 @@ export interface User{
   email: string;
 }
 
-export const authApi = (Login: (userData: any) => void) => {
+export const authApi = () => {
   const login = async (idToken: string): Promise<any> => {
     const { data } = await api.post("/login", { idToken });
-    Login(data.user);
-
     return data;
   };
 
@@ -22,8 +19,6 @@ export const authApi = (Login: (userData: any) => void) => {
   };
 
   const logout = async () => {
-    Login(null);
-    Cookies.remove('auth')
     await api.post("/logout");
   };
 

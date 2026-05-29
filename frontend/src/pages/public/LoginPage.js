@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonInput } from '@ionic/react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -22,6 +22,7 @@ function LoginPage() {
 
   const handleLogin = async () => {
     setError('');
+
     const trimmedEmail = String(email).trim();
     if (!trimmedEmail || !password) {
       setError('Preencha o e-mail e a senha.');
@@ -38,15 +39,21 @@ function LoginPage() {
       Login(response.user);
 
       if (shareToken) {
-        navigate(`/share?token=${encodeURIComponent(shareToken)}`, { replace: true });
+        navigate(`/share?token=${encodeURIComponent(shareToken)}`);
       } else {
-        navigate('/home', { replace: true });
+        navigate('/home');
       }
     } catch (err) {
-      console.error('Login error:', err);
-      const message = err?.response?.data?.message ||
-        err?.message ||
-        'Não foi possível fazer login. Verifique suas credenciais.';
+      if (err?.code?.includes('auth/')) {
+        setError('Erro de autenticação Firebase: ' + err.code);
+        return;
+      }
+      if (err?.response?.data?.code === 'EMAIL_NOT_VERIFIED') {
+        setError('Confirma o teu email antes de entrar.');
+        return;
+      }
+
+      const message = err?.response?.data?.message || err?.message || 'Não foi possível fazer login.';
       setError(message);
     } finally {
       setLoading(false);

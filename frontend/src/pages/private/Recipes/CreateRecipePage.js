@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
-  IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
-  IonBackButton, IonButtons, IonInput, IonTextarea, IonSelect, IonSelectOption
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonBackButton,
+  IonButtons,
+  IonInput,
+  IonTextarea,
+  IonSelect,
+  IonSelectOption,
 } from '@ionic/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../../components/AxiosInstance';
@@ -11,6 +20,7 @@ function CreateRecipePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -21,8 +31,13 @@ function CreateRecipePage() {
   const [prepTime, setPrepTime] = useState('');
   const [cookTime, setCookTime] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+
   const [imageName, setImageName] = useState('');
   const [imageFile, setImageFile] = useState(null);
+  const [suggestedImages, setSuggestedImages] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  const [loadingImage, setLoadingImage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [categories, setCategories] = useState([]);
@@ -34,10 +49,16 @@ function CreateRecipePage() {
       setTitle(recipe.title || '');
       setDescription(recipe.description || '');
       setCategory(recipe.category || '');
-      setIngredients(Array.isArray(recipe.ingredients) ? recipe.ingredients.join('\n') : recipe.ingredients || '');
-      setInstructions(Array.isArray(recipe.instructions) ? recipe.instructions.join('\n') : recipe.instructions || '');
-      setServings(recipe.servings || '');
-      setDifficulty(recipe.difficulty || '');
+      setIngredients(
+        Array.isArray(recipe.ingredients)
+          ? recipe.ingredients.join('\n')
+          : recipe.ingredients || ''
+      );
+      setInstructions(
+        Array.isArray(recipe.instructions)
+          ? recipe.instructions.join('\n')
+          : recipe.instructions || ''
+      );
     }
   }, [location.state]);
 
@@ -54,8 +75,34 @@ function CreateRecipePage() {
     loadCategories();
   }, [user]);
 
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImageName(file.name);
+    setSelectedImage(null);
+    setSuggestedImages([]);
+  };
+
+  const handleFetchImages = async () => {
+    try {
+      setLoadingImage(true);
+      const query = `${title || 'food'}`;
+      const { data } = await api.get(
+        `/analysisVideo/image-suggestions?query=${encodeURIComponent(query)}`
+      );
+      if (data.success) {
+        setSuggestedImages(data.images);
+      }
+    } catch (err) {
+      setError('Erro ao buscar imagens do Pexels');
+    } finally {
+      setLoadingImage(false);
+    }
+  };
+
   const handleCreateCategory = async () => {
-    const name = category.trim();
+    const name = (category || '').trim();
     if (!name) return;
     try {
       if (!user?.id) {
@@ -65,23 +112,12 @@ function CreateRecipePage() {
       const { data } = await api.post('/categories', { userId: user.id, name });
       if (data?.success) {
         const newCat = data.category;
-        setCategories(prev => [newCat, ...prev.filter(c => c.id !== newCat.id)]);
+        setCategories((prev) => [newCat, ...prev.filter((c) => c.id !== newCat.id)]);
         setCategory(newCat.name);
       }
     } catch (err) {
       setError(err?.response?.data?.message || 'Erro ao criar categoria.');
     }
-  };
-
-  const handleImageChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      setImageName('');
-      setImageFile(null);
-      return;
-    }
-    setImageName(file.name);
-    setImageFile(file);
   };
 
   const handleSubmit = async (event) => {
@@ -92,7 +128,7 @@ function CreateRecipePage() {
       return;
     }
     if (!title.trim() || !ingredients.trim() || !instructions.trim()) {
-      setError('Título, ingredientes e modo de preparo são obrigatórios.');
+      setError('Título, ingredientes e instruções são obrigatórios.');
       return;
     }
     setLoading(true);
@@ -115,7 +151,7 @@ function CreateRecipePage() {
       if (data.success) {
         navigate('/home');
       } else {
-        setError(data.message || 'Erro ao criar receita.');
+        setError(data.message || 'Não foi possível criar a receita.');
       }
     } catch (err) {
       setError(err?.response?.data?.message || 'Erro ao criar receita.');
@@ -328,6 +364,7 @@ function CreateRecipePage() {
                     />
                   </div>
                 </div>
+                {/* Removido bloco duplicado de categorias */}
               </div>
 
               {/* Description, Ingredients, Instructions */}

@@ -2,6 +2,8 @@ import React from 'react';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
+import { useAuth } from './AppContext.tsx';
+
 import './index.css';
 
 import HomePage from './pages/private/Home/HomePage';
@@ -15,7 +17,30 @@ import SharePage from './pages/public/SharePage';
 
 setupIonicReact();
 
+function SplashScreen() {
+    return (
+    <div
+      style={{
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '20px',
+        fontWeight: 'bold'
+      }}
+    >
+      Loading...
+    </div>
+  );
+}
+
 function App() {
+  const { loading } = useAuth();
+
+  if (loading) {
+    return <SplashScreen />;
+  }
+
   return (
     <IonApp>
       <BrowserRouter>

@@ -1,6 +1,6 @@
+const axios = require('axios');
 const pool = require('../config/database');
 const { uploadToCloudinary } = require('../middleware/upload');
-const axios = require('axios');
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY;
 const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
@@ -182,11 +182,17 @@ const RecipeController = {
   },
 
   createRecipe: async (req, res) => {
-    const file = req.file;
+    let image = null;
     const { userId, title, description, categoryName, ingredients, instructions, videoUrl, imageUrl, prepTime, cookTime, servings, difficulty } = req.body;
 
     if (!userId || !title || !ingredients || !instructions) {
       return res.status(400).json({ success: false, message: 'userId, título, ingredientes e instruções são obrigatórios.' });
+    }
+
+    if (req.file) {
+      image = req.file;
+    } else if (req.body.imageUrl) {
+      image = req.body.imageUrl;
     }
 
     try {
@@ -201,8 +207,8 @@ const RecipeController = {
       }
 
       let finalImageUrl = imageUrl || null;
-      if (file && file.buffer) {
-        const uploadResult = await uploadToCloudinary(file.buffer, 'recipes');
+      if (image && image.buffer) {
+        const uploadResult = await uploadToCloudinary(image.buffer, 'recipes');
         finalImageUrl = uploadResult.url;
       }
 
@@ -470,6 +476,47 @@ const RecipeController = {
       return res.status(500).json({ success: false, message: err.message || 'Erro na análise de vídeo.' });
     }
   },
+
+  getRecipeImageSuggestions: async (req, res) => {
+    try {
+      const { query } = req.query;
+
+      if (!query) {
+        return res.status(400).json({
+          success: false,
+          message: "Query obrigatória"
+        });
+      }
+
+      const response = await axios.get("https://api.pexels.com/v1/search", {
+        headers: {
+          Authorization: process.env.PEXELS_API_KEY
+        },
+        params: {
+          query,
+          per_page: 2
+        }
+      });
+
+      const images = response.data.photos.map((photo) => ({
+        id: photo.id,
+        small: photo.src.medium,
+        full: photo.src.original,
+        photographer: photo.photographer
+      }));
+
+      return res.json({
+        success: true,
+        images
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao buscar imagens"
+      });
+    }
+  }
 };
 
 module.exports = RecipeController;

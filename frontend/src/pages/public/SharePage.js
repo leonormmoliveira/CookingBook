@@ -12,6 +12,7 @@ function SharePage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [preview, setPreview] = useState(null);
   const [recipe, setRecipe] = useState(null);
   const [user, setUser] = useState(null);
   const [cloning, setCloning] = useState(false);
@@ -40,12 +41,20 @@ function SharePage() {
       return;
     }
 
+    setLoading(true);
+    setError('');
+
     try {
-      const details = await api.get(`/sharing/recipe?token=${encodeURIComponent(token)}&userId=${currentUser?.id || ''}`);
-      setRecipe(details.data.recipe);
+      const validation = await api.get(`/sharing/validate?token=${encodeURIComponent(token)}`);
+      setPreview(validation.data.recipe);
+
+      if (currentUser?.id) {
+        const details = await api.get(`/sharing/recipe?token=${encodeURIComponent(token)}&userId=${currentUser.id}`);
+        setRecipe(details.data.recipe);
+      }
     } catch (err) {
       console.error('SharePage load error:', err);
-      setError(err?.response?.data?.message || 'Não foi possível carregar a receita.');
+      setError(err?.response?.data?.message || 'Não foi possível carregar o link de compartilhamento.');
     } finally {
       setLoading(false);
     }
@@ -57,7 +66,10 @@ function SharePage() {
       return;
     }
 
-    if (!recipe) return;
+    if (!recipe) {
+      setError('Receita não encontrada para clonar.');
+      return;
+    }
 
     if (recipe.ownerId === user.id) {
       setError('Você já é o dono desta receita.');
@@ -84,7 +96,7 @@ function SharePage() {
       formData.append('difficulty', recipe.difficulty || '');
 
       await createRecipe(formData);
-      setSuccess('Receita clonada com sucesso!');
+      setSuccess('Receita clonada com sucesso e salva na sua conta.');
     } catch (err) {
       console.error('Clone error:', err);
       setError(err?.response?.data?.message || 'Não foi possível clonar a receita.');

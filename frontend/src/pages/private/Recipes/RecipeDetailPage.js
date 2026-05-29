@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  IonPage, IonHeader, IonToolbar, IonContent, IonButtons, IonButton,
-  IonIcon, IonInput, IonTextarea, IonSelect, IonSelectOption
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
+  IonButtons, IonButton, IonIcon, IonInput, IonTextarea,
+  IonSelect, IonSelectOption
 } from '@ionic/react';
 import { arrowBack, heart, heartOutline, shareSocial } from 'ionicons/icons';
 import { getRecipeById, updateRecipe, deleteRecipe } from '../../../services/recipeService';
@@ -14,12 +15,14 @@ function RecipeDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
 
+  // Campos do formulário (declarados!)
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [categoryName, setCategoryName] = useState('');
@@ -71,7 +74,11 @@ function RecipeDetailPage() {
     loadRecipe();
   }, [id, user]);
 
-  const handleEdit = () => { setEditing(true); setError(''); };
+  const handleEdit = () => {
+    setEditing(true);
+    setError('');
+  };
+
   const handleCancel = () => {
     if (recipe) {
       setTitle(recipe.title || '');
@@ -93,7 +100,10 @@ function RecipeDetailPage() {
 
   const handleImageChange = (event) => {
     const file = event.target.files?.[0];
-    if (!file) { setImageFile(null); return; }
+    if (!file) {
+      setImageFile(null);
+      return;
+    }
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   };
@@ -126,6 +136,7 @@ function RecipeDetailPage() {
       if (imageFile) formData.append('image', imageFile);
 
       await updateRecipe(id, formData);
+      // Recarrega a receita atualizada passando o userId
       const { recipe: updated } = await getRecipeById(id, user.id);
       setRecipe(updated);
       setEditing(false);
@@ -188,17 +199,11 @@ function RecipeDetailPage() {
             {!editing && recipe && (
               <>
                 {user?.id && recipe.ownerId === user.id && (
-                  <button
-                    onClick={handleEdit}
-                    className="text-blue-600 font-medium text-sm mr-2"
-                  >
+                  <button onClick={handleEdit} className="text-blue-600 font-medium text-sm mr-2">
                     Editar
                   </button>
                 )}
-                <button
-                  onClick={handleDelete}
-                  className="text-red-500 font-medium text-sm"
-                >
+                <button onClick={handleDelete} className="text-red-500 font-medium text-sm">
                   Excluir
                 </button>
               </>
@@ -211,7 +216,7 @@ function RecipeDetailPage() {
         <div className="max-w-3xl mx-auto space-y-4 pb-20">
           {loading ? (
             <div className="rounded-2xl bg-white p-6 shadow-sm text-center text-gray-500">Carregando receita...</div>
-          ) : error ? (
+          ) : error && !recipe ? (
             <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
           ) : recipe ? (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -219,8 +224,7 @@ function RecipeDetailPage() {
                 <img src={imagePreview} alt={recipe.title} className="w-full h-56 object-cover" />
               )}
 
-              <div className="p-6 space-y-6">
-                {/* Title and Meta */}
+              <div className="p-6 space-y-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">{recipe.title}</h2>
@@ -230,7 +234,6 @@ function RecipeDetailPage() {
                       </p>
                     )}
                   </div>
-
                   {!editing && (
                     <div className="flex items-center gap-3 text-sm text-gray-500">
                       <button
@@ -263,13 +266,11 @@ function RecipeDetailPage() {
                   )}
                 </div>
 
-                {/* Time Info */}
                 <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 p-4 rounded-xl">
                   {recipe.prep_time && <div><strong>Preparação:</strong> {recipe.prep_time} min</div>}
                   {recipe.cook_time && <div><strong>Cozimento:</strong> {recipe.cook_time} min</div>}
                 </div>
 
-                {/* Share Button */}
                 {!editing && user?.id && recipe.ownerId === user.id && (
                   <div className="flex justify-end">
                     <button
@@ -283,7 +284,6 @@ function RecipeDetailPage() {
                   </div>
                 )}
 
-                {/* Video Link */}
                 {recipe.video_url && (
                   <div>
                     <h3 className="text-lg font-semibold mb-1">Vídeo da Receita</h3>
@@ -311,9 +311,8 @@ function RecipeDetailPage() {
                   <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{shareError}</div>
                 )}
 
-                {/* Editing Form */}
                 {editing ? (
-                  <div className="space-y-5">
+                  <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Título</label>
                       <div className="bg-gray-50 border border-gray-300 rounded-xl p-3">
@@ -467,8 +466,7 @@ function RecipeDetailPage() {
                     </div>
                   </div>
                 ) : (
-                  /* View Mode */
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800">Descrição</h3>
                       <p className="text-gray-600 mt-2">{recipe.description || 'Sem descrição.'}</p>
@@ -476,17 +474,17 @@ function RecipeDetailPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800">Ingredientes</h3>
                       <div className="mt-3 space-y-2 text-gray-700">
-                        {recipe.ingredients.split('\n').map((line, index) => (
-                          line.trim() && <p key={index}>• {line.trim()}</p>
-                        ))}
+                        {recipe.ingredients.split('\n').map((line, index) =>
+                          line.trim() ? <p key={index}>• {line.trim()}</p> : null
+                        )}
                       </div>
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800">Modo de preparo</h3>
                       <div className="mt-3 space-y-2 text-gray-700">
-                        {recipe.instructions.split('\n').map((line, index) => (
-                          line.trim() && <p key={index}>{line.trim()}</p>
-                        ))}
+                        {recipe.instructions.split('\n').map((line, index) =>
+                          line.trim() ? <p key={index}>{line.trim()}</p> : null
+                        )}
                       </div>
                     </div>
                   </div>
