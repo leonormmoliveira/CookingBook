@@ -11,6 +11,7 @@ import FavoritesPage from './pages/private/Favorite/FavoritesPage';
 import VideoAnalysisPage from './pages/private/VideoAnalsisPage/VideoAnalysisPage';
 import LoginPage from './pages/public/LoginPage';
 import SignupPage from './pages/public/SignupPage';
+import SharePage from './pages/public/SharePage';
 
 setupIonicReact();
 
@@ -28,6 +29,7 @@ function App() {
             <Route path="/create" element={<CreateRecipePage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
             <Route path="/video-analysis" element={<VideoAnalysisPage />} />
+            <Route path="/share" element={<SharePage />} />
           </Routes>
         </IonRouterOutlet>
       </BrowserRouter>
