@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonBackButton, IonButtons, IonInput, IonTextarea, IonButton } from '@ionic/react';
+import { IonActionSheet, IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonBackButton, IonButtons, IonInput, IonTextarea, IonButton } from '@ionic/react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { camera, image, images, document as fileIcon } from 'ionicons/icons';
 import api from '../../../components/AxiosInstance';
 import { useAuth } from '../../../AppContext.tsx';
 
@@ -15,6 +16,7 @@ function CreateRecipePage() {
   const [ingredients, setIngredients] = useState('');
   const [instructions, setInstructions] = useState('');
 
+  const [showImageSheet, setShowImageSheet] = useState(false);
   const [imageName, setImageName] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [suggestedImages, setSuggestedImages] = useState([]);
@@ -48,6 +50,31 @@ function CreateRecipePage() {
     loadCategories();
   }, [user]);
 
+  const openCamera = async () => {
+    const input = window.document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment'; // abre câmara no telemóvel
+    input.onchange = (e) => handleImageChange(e);
+    input.click();
+  };
+
+  const openGallery = async () => {
+    const input = window.document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => handleImageChange(e);
+    input.click();
+  };
+
+  const openFiles = async () => {
+    const input = window.document.createElement('input');
+    input.type = 'file';
+    input.accept = '*/*';
+    input.onchange = (e) => handleImageChange(e);
+    input.click();
+  };
+
   const handleImageChange = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -69,6 +96,8 @@ function CreateRecipePage() {
 
       if (data.success) {
         setSuggestedImages(data.images);
+        setImageFile(null);
+        setImageName('');
       }
     } catch (err) {
       setError("Erro ao buscar imagens do Pexels");
@@ -207,22 +236,12 @@ function CreateRecipePage() {
 
               <div>
                 <label className="block text-sm font-medium mb-2">Foto da Receita (opcional)</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="w-full rounded border border-gray-200 bg-white p-2 text-sm"
-                />
+                <IonButton expand="block" onClick={() => setShowImageSheet(true)}>
+                  Escolher imagem
+                </IonButton>
                 {imageName && (
                   <p className="mt-2 text-sm text-gray-600">Imagem selecionada: {imageName}</p>
                 )}
-                <IonButton
-                  type="button"
-                  onClick={handleFetchImages}
-                  disabled={loadingImage}
-                >
-                  {loadingImage ? "A procurar imagens..." : "Gerar imagens (Pexels)"}
-                </IonButton>
               </div>
 
                {suggestedImages.length > 0 && (
@@ -290,6 +309,37 @@ function CreateRecipePage() {
             </form>
           </div>
         </div>
+        <IonActionSheet
+          isOpen={showImageSheet}
+          onDidDismiss={() => setShowImageSheet(false)}
+          header="Adicionar imagem"
+          buttons={[
+            {
+              text: 'Tirar foto',
+              icon: camera,
+              handler: () => openCamera()
+            },
+            {
+              text: 'Galeria',
+              icon: images,
+              handler: () => openGallery()
+            },
+            {
+              text: 'Ficheiros',
+              icon: fileIcon,
+              handler: () => openFiles()
+            },
+            {
+              text: 'Gerar imagens',
+              icon: image,
+              handler: () => handleFetchImages()
+            },
+            {
+              text: 'Cancelar',
+              role: 'cancel'
+            }
+          ]}
+        />
       </IonContent>
     </IonPage>
   );
