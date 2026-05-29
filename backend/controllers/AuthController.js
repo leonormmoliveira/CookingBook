@@ -48,72 +48,70 @@ const AuthController = {
     },
 
     register: async (req, res) => {
-        const { username, email, password } = req.body;
-        let firebaseUser = null;
+    const { username, email, password } = req.body;
+    let firebaseUser = null;
 
+    try {
+        // Check if user already exists
+        const [existing] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+        if (existing.length > 0) {
+            return res.status(400).json({ success: false, message: "Já existe um usuário com esse email." });
+        }
+
+        // Create user in Firebase
+        firebaseUser = await admin.auth().createUser({
+            email: email.trim(),
+            password,
+            displayName: username
+        });
+
+        // Insert into MySQL
+        const [result] = await pool.query(
+            'INSERT INTO users (authUid, username, name, email, status, emailVerified) VALUES (?, ?, ?, ?, ?, ?)',
+            [firebaseUser.uid, username, username, email.trim(), 'pending', 0]
+        );
+
+        // Try to send verification email
+        let emailWarning = null;
         try {
-            // Verifica se já existe usuário com o email
-            const [existing] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-            if (existing.length > 0) {
-                return res.status(400).json({success: false, message: "Já existe um usuário com esse email." });
-            }
+            const backendUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
+            const verificationToken = generateInviteToken({ uid: firebaseUser.uid, email });
+            const serverFallbackLink = `${backendUrl}/api/auth/verify-email-server?token=${verificationToken}`;
 
-            // Cria usuário no Firebase
-            firebaseUser = await admin.auth().createUser({
-                email,
-                password,
-                displayName: username
-            });
+            await sendVerificationEmail(email, serverFallbackLink);
+        } catch (emailErr) {
+            console.error('Verification email failed:', emailErr);
+            emailWarning = emailErr.message;
+        }
 
-            // Insere usuário no MySQL
-            const [result] = await pool.query(
-                'INSERT INTO users (authUid, username, name, email, status, emailVerified) VALUES (?, ?, ?, ?, ?, ?)',
-                [
-                    firebaseUser.uid,
-                    username,
-                    username,
-                    email,
-                    'pending',
-                    0
-                ]
-            );
+        const [userRows] = await pool.query('SELECT * FROM users WHERE id = ?', [result.insertId]);
 
-            let emailWarning = null;
+        return res.status(201).json({
+            success: true,
+            message: emailWarning 
+                ? "Usuário criado com sucesso, mas não foi possível enviar o email de verificação." 
+                : "Usuário criado com sucesso. Verifique seu e-mail.",
+            user: userRows[0],
+            emailWarning: emailWarning || undefined
+        });
+
+    } catch (err) {
+        console.error('Register error:', err);
+
+        // Cleanup: delete Firebase user if MySQL insert failed
+        if (firebaseUser?.uid) {
             try {
-                const backendUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
-                const verificationToken = generateInviteToken({ uid: firebaseUser.uid, email });
-                const serverFallbackLink = `${backendUrl}/api/auth/verify-email-server?token=${verificationToken}`;
-
-                await sendVerificationEmail(email, serverFallbackLink);
-            } catch (emailErr) {
-                console.error('Verification email failed:', emailErr);
-                emailWarning = emailErr.message;
-            }
-
-            // Busca o usuário recém-criado
-            const [userRows] = await pool.query('SELECT * FROM users WHERE id = ?', [result.insertId]);
-            const newUser = userRows[0];
-
-            const response = {
-                success: true,
-                message: emailWarning
-                    ? "Usuário criado com sucesso, mas não foi possível enviar o email de verificação."
-                    : "Usuário criado com sucesso. Verifique seu e-mail.",
-                user: newUser
-            };
-
-            if (emailWarning) {
-                response.emailWarning = emailWarning;
-            }
-
-            return res.status(201).json(response);
-        } catch (err) {
-        
-            if (firebaseUser?.uid) {
                 await admin.auth().deleteUser(firebaseUser.uid);
+            } catch (cleanupErr) {
+                console.error('Cleanup failed:', cleanupErr);
             }
+        }
 
-            return res.status(500).json({success: false, message: "Erro ao criar o usuário", error: err.message });
+            return res.status(500).json({ 
+                success: false, 
+                message: "Erro ao criar o usuário", 
+                error: err.message 
+            });
         }
     },
 
