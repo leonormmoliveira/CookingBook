@@ -6,6 +6,7 @@ import api from '../../../components/AxiosInstance';
 function VideoAnalysisPage() {
   const [videoUrl, setVideoUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState('');
   const [autoAnalyzed, setAutoAnalyzed] = useState(false);
@@ -17,6 +18,55 @@ function VideoAnalysisPage() {
     const url = params.get('url');
     if (url) setVideoUrl(url);
   }, [location.search]);
+
+  const createRecipeFromAnalysis = useCallback(async (parsed) => {
+    if (!parsed || !parsed.title || !parsed.ingredients || !parsed.instructions) {
+      return false;
+    }
+
+    setError('');
+    setCreating(true);
+
+    try {
+      const stored = localStorage.getItem('user');
+      if (!stored) {
+        setError('Faça login para salvar a receita gerada.');
+        return false;
+      }
+      const user = JSON.parse(stored);
+
+      const payload = {
+        userId: user.id,
+        title: parsed.title.trim(),
+        description: parsed.description?.trim() || null,
+        categoryName: parsed.category?.trim() || null,
+        ingredients: Array.isArray(parsed.ingredients)
+          ? parsed.ingredients.join('\n')
+          : parsed.ingredients?.trim() || '',
+        instructions: Array.isArray(parsed.instructions)
+          ? parsed.instructions.join('\n')
+          : parsed.instructions?.trim() || '',
+        servings: parsed.servings ? Number(parsed.servings) : null,
+        difficulty: parsed.difficulty || null,
+        videoUrl: videoUrl.trim(),
+      };
+
+      const { data } = await api.post('/recipes', payload);
+      if (data.success) {
+        navigate('/home');
+        return true;
+      }
+
+      setError(data.message || 'Não foi possível salvar a receita gerada.');
+      return false;
+    } catch (err) {
+      console.error(err);
+      setError(err?.response?.data?.message || 'Erro ao salvar a receita gerada.');
+      return false;
+    } finally {
+      setCreating(false);
+    }
+  }, [navigate, videoUrl]);
 
   const handleAnalyzeVideo = useCallback(async () => {
     setError('');
@@ -41,6 +91,9 @@ function VideoAnalysisPage() {
 
       if (data.success) {
         setAnalysis(data.result);
+        if (data.result?.parsed) {
+          await createRecipeFromAnalysis(data.result.parsed);
+        }
       } else {
         setError(data.message || 'Não foi possível analisar o vídeo.');
       }
@@ -50,7 +103,7 @@ function VideoAnalysisPage() {
     } finally {
       setLoading(false);
     }
-  }, [videoUrl]);
+  }, [createRecipeFromAnalysis, videoUrl]);
 
   useEffect(() => {
     if (videoUrl && !autoAnalyzed) {
@@ -96,9 +149,9 @@ function VideoAnalysisPage() {
           <IonButton 
             className="custom-btn w-full" 
             onClick={handleAnalyzeVideo}
-            disabled={loading}
+            disabled={loading || creating}
           >
-            {loading ? 'Analisando...' : '🎬 Analisar Vídeo'}
+            {loading ? 'Analisando...' : creating ? 'Salvando receita...' : '🎬 Analisar Vídeo'}
           </IonButton>
           <div className="mt-3">
             <IonButton fill="clear" color="medium" onClick={() => navigate('/create')}>

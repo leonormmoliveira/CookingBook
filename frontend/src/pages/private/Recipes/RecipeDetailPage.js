@@ -185,32 +185,17 @@ function RecipeDetailPage() {
           <IonButtons slot="end">
             {!editing && recipe && (
               <>
-               {(() => {
-                  const isOwner = user?.id && recipe.userId === user.id;
+                {(() => {
+                  const isOwner = user?.id && recipe.ownerId === user.id;
                   return isOwner ? (
-                    <>
-                      <IonButton onClick={handleEdit}>
-                        Editar
-                      </IonButton>
-
-                      <IonButton
-                        color="danger"
-                        onClick={handleDelete}
-                        disabled={saving}
-                      >
-                        {saving ? 'Excluindo...' : 'Excluir'}
-                      </IonButton>
-
-                      <IonButton
-                        onClick={handleShare}
-                        disabled={shareLoading}
-                      >
-                        <IonIcon icon={shareSocial} slot="start" />
-                        {shareLoading ? 'Gerando...' : 'Compartilhar'}
-                      </IonButton>
-                    </>
+                    <IonButton onClick={handleShare} disabled={shareLoading}>
+                      <IonIcon icon={shareSocial} slot="start" />
+                      {shareLoading ? 'Gerando...' : 'Compartilhar'}
+                    </IonButton>
                   ) : null;
                 })()}
+                <IonButton onClick={handleEdit}>Editar</IonButton>
+                <IonButton color="danger" onClick={handleDelete}>Excluir</IonButton>
               </>
             )}
           </IonButtons>
@@ -278,32 +263,42 @@ function RecipeDetailPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">Título</label>
-                      <IonInput value={title} onIonInput={(e) => setTitle(e.detail.value)} placeholder="Título da receita" />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonInput value={title} onIonInput={(e) => setTitle(e.detail.value)} placeholder="Título da receita" />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Categoria</label>
-                      <IonInput value={categoryName} onIonInput={(e) => setCategoryName(e.detail.value)} placeholder="Categoria" />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonInput value={categoryName} onIonInput={(e) => setCategoryName(e.detail.value)} placeholder="Categoria" />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Foto da receita</label>
-                      <input type="file" accept="image/*" onChange={handleImageChange} className="w-full rounded border border-gray-200 bg-white p-2 text-sm" />
+                      <input type="file" accept="image/*" onChange={handleImageChange} className="w-full rounded border border-gray-300 bg-white p-2 text-sm" />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Descrição</label>
-                      <IonTextarea value={description} onIonInput={(e) => setDescription(e.detail.value)} rows={3} />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonTextarea value={description} onIonInput={(e) => setDescription(e.detail.value)} rows={3} />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Ingredientes</label>
-                      <IonTextarea value={ingredients} onIonInput={(e) => setIngredients(e.detail.value)} rows={5} />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonTextarea value={ingredients} onIonInput={(e) => setIngredients(e.detail.value)} rows={5} />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Modo de preparo</label>
-                      <IonTextarea value={instructions} onIonInput={(e) => setInstructions(e.detail.value)} rows={6} />
+                      <div className="bg-gray-50 border border-gray-300 rounded p-2">
+                        <IonTextarea value={instructions} onIonInput={(e) => setInstructions(e.detail.value)} rows={6} />
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-3 sm:flex-row">

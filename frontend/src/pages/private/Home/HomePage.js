@@ -159,7 +159,7 @@ function HomePage() {
         </IonToolbar>
       </IonHeader>
 
-       <IonContent className="ion-padding" fullscreen style={{ '--padding-bottom': '85px' }}>
+      <IonContent className="ion-padding" fullscreen style={{ '--padding-bottom': '85px' }}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6" style={{ paddingBottom: '80px' }}>
           <div className="mb-6 space-y-4">
             <IonSearchbar
@@ -168,15 +168,16 @@ function HomePage() {
               placeholder="Pesquisar receitas ou categorias"
               className="bg-white rounded-md shadow-sm"
             />
-            <div className="flex flex-wrap gap-2 items-center">
-              <button
-                type="button"
-                className={`rounded-full border px-4 py-2 text-sm font-medium ${selectedCategory === 'Todos' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200'}`}
-                onClick={() => setSelectedCategory('Todos')}
-              >
-                Todos
-              </button>
-              {categories.map((category) => (
+            <div className="flex flex-wrap gap-2 items-center justify-between">
+              <div className="flex flex-wrap gap-2 items-center">
+                <button
+                  type="button"
+                  className={`rounded-full border px-4 py-2 text-sm font-medium ${selectedCategory === 'Todos' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200'}`}
+                  onClick={() => setSelectedCategory('Todos')}
+                >
+                  Todos
+                </button>
+                {categories.map((category) => (
                   <button
                     key={category.id}
                     type="button"
@@ -192,7 +193,7 @@ function HomePage() {
               </IonButton>
             </div>
           </div>
-
+        </div>
           <section className="mb-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -248,17 +249,6 @@ function HomePage() {
             <IonIcon icon={add} />
           </IonFabButton>
         </IonFab>
-
-        <button
-          onClick={handleCreateClick}
-          aria-label="Criar"
-          className="fixed bottom-4 right-4 z-50 inline-flex items-center justify-center w-14 h-14 rounded-full shadow-lg text-white"
-          style={{ background: '#0066cc' }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
 
         <IonModal isOpen={showCreateModal} onDidDismiss={() => setShowCreateModal(false)}>
           <div className="p-6">

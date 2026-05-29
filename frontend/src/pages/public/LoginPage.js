@@ -14,7 +14,7 @@ function LoginPage() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
-  const sharedToken = new URLSearchParams(location.search).get('token') || '';
+  const shareToken = new URLSearchParams(location.search).get('shareToken');
   const { login } = authApi(() => {});
   const { Login } = useAuth();
 
@@ -37,8 +37,8 @@ function LoginPage() {
       
       Login(response.user);
 
-      if (sharedToken) {
-        navigate(`/share?token=${encodeURIComponent(sharedToken)}`);
+      if (shareToken) {
+        navigate(`/share?token=${encodeURIComponent(shareToken)}`);
       } else {
         navigate('/home');
       }
@@ -101,7 +101,7 @@ function LoginPage() {
           </IonButton>
 
           <p className="text-sm text-gray-600 text-center">
-            Ainda não tem conta? <Link to={`/signup${sharedToken ? `?shareToken=${encodeURIComponent(sharedToken)}` : ''}`} className="text-blue-600 font-medium">Cadastre-se</Link>
+            Ainda não tem conta? <Link to={`/signup${shareToken ? `?shareToken=${encodeURIComponent(shareToken)}` : ''}`} className="text-blue-600 font-medium">Cadastre-se</Link>
           </p>
         </div>
       </IonContent>

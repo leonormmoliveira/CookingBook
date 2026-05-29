@@ -16,7 +16,7 @@ function SignupPage() {
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
-  const sharedToken = new URLSearchParams(location.search).get('token') || '';
+  const shareToken = new URLSearchParams(location.search).get('shareToken');
   const { signup } = authApi(() => {});
 
   const updateField = (field, value) => {
@@ -53,7 +53,7 @@ function SignupPage() {
       setSuccess('Cadastro realizado com sucesso. Verifique seu e-mail e, depois, faça login.');
 
       setTimeout(() => {
-        navigate(`/login${sharedToken ? `?shareToken=${encodeURIComponent(sharedToken)}` : ''}`);
+        navigate(`/login${shareToken ? `?shareToken=${encodeURIComponent(shareToken)}` : ''}`);
       }, 1800);
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || 'Não foi possível concluir o cadastro.';
@@ -140,7 +140,7 @@ function SignupPage() {
           </IonButton>
 
           <p className="text-sm text-gray-600 text-center">
-               Já tem conta? <Link to={`/login${sharedToken ? `?shareToken=${encodeURIComponent(sharedToken)}` : ''}`} className="text-blue-600 font-medium">Entrar</Link>
+            Já tem conta? <Link to={`/login${shareToken ? `?shareToken=${encodeURIComponent(shareToken)}` : ''}`} className="text-blue-600 font-medium">Entrar</Link>
           </p>
         </div>
       </IonContent>
