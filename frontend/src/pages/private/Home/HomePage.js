@@ -1,12 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonButtons, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonSearchbar, IonFab, IonFabButton, IonIcon, IonModal, IonList, IonItem, IonLabel, IonAlert } from '@ionic/react';
-import { add, heart, heartOutline, chevronDown, chevronUp } from 'ionicons/icons';
+import {
+  IonPage,
+  IonButtons,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonButton,
+  IonSearchbar,
+  IonIcon,
+  IonModal,
+} from '@ionic/react';
+import {
+  add,
+  heart,
+  heartOutline,
+  chevronDown,
+  chevronUp,
+  logOut,
+  heartSharp,
+} from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../components/AxiosInstance';
 import { addFavorite, removeFavorite } from '../../../services/favoriteService';
 import { useAuth } from '../../../AppContext.tsx';
 import authApi from '../../../hooks/authApi.tsx';
-import { logOut, heartSharp } from 'ionicons/icons';
 
 function HomePage() {
   const [searchText, setSearchText] = useState('');
@@ -15,8 +33,8 @@ function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showVideoAlert, setShowVideoAlert] = useState(false);
   const [showAllCategories, setShowAllCategories] = useState(false);
+
   const navigate = useNavigate();
   const { logout } = authApi(() => { });
   const { user, Logout } = useAuth();
@@ -51,13 +69,14 @@ function HomePage() {
     loadInitialData();
   }, [user]);
 
-  // Sort categories by recipe count descending, take top 3
   const sortedCategories = [...categories].sort((a, b) => {
     const countA = recipes.filter(r => r.categoryName === a.name).length;
     const countB = recipes.filter(r => r.categoryName === b.name).length;
     return countB - countA;
   });
-  const visibleCategories = showAllCategories ? sortedCategories : sortedCategories.slice(0, 3);
+  const visibleCategories = showAllCategories
+    ? sortedCategories
+    : sortedCategories.slice(0, 3);
 
   const chooseManual = () => {
     setShowCreateModal(false);
@@ -66,27 +85,32 @@ function HomePage() {
 
   const chooseVideo = () => {
     setShowCreateModal(false);
-    setShowVideoAlert(true);
+    navigate('/video-analysis');
   };
 
-  const submitVideo = (url) => {
-    setShowVideoAlert(false);
-    navigate(`/video-analysis?url=${encodeURIComponent(url || '')}`);
-  };
-
-  const sortFavoritesFirst = (items) => [...items].sort((a, b) => Number(b.isFavorite) - Number(a.isFavorite));
+  const sortFavoritesFirst = (items) =>
+    [...items].sort((a, b) => Number(b.isFavorite) - Number(a.isFavorite));
 
   const searchedRecipes = recipes.filter((recipe) => {
     const keyword = searchText?.toLowerCase?.() || '';
     if (!keyword) return true;
-    return [recipe.title, recipe.description, recipe.ingredients, recipe.instructions, recipe.categoryName]
+    return [
+      recipe.title,
+      recipe.description,
+      recipe.ingredients,
+      recipe.instructions,
+      recipe.categoryName,
+    ]
       .filter(Boolean)
       .some((field) => field.toLowerCase().includes(keyword));
   });
 
-  const categoryFilteredRecipes = selectedCategory === 'Todos'
-    ? searchedRecipes
-    : searchedRecipes.filter((recipe) => recipe.categoryName === selectedCategory);
+  const categoryFilteredRecipes =
+    selectedCategory === 'Todos'
+      ? searchedRecipes
+      : searchedRecipes.filter(
+        (recipe) => recipe.categoryName === selectedCategory
+      );
 
   const categorized = {};
   const uncategorized = [];
@@ -100,17 +124,26 @@ function HomePage() {
     }
   });
 
-  const categorySections = Object.keys(categorized).sort().map((categoryName) => ({
-    name: categoryName,
-    recipes: sortFavoritesFirst(categorized[categoryName]),
-  }));
+  const categorySections = Object.keys(categorized)
+    .sort()
+    .map((categoryName) => ({
+      name: categoryName,
+      recipes: sortFavoritesFirst(categorized[categoryName]),
+    }));
 
   const renderRecipeCard = (recipe) => {
     const imageSrc = recipe.image_data || recipe.image_url;
     return (
-      <div key={recipe.id} className="relative bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+      <div
+        key={recipe.id}
+        className="relative bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm"
+      >
         {imageSrc && (
-          <img src={imageSrc} alt={recipe.title} className="w-full h-32 object-cover" />
+          <img
+            src={imageSrc}
+            alt={recipe.title}
+            className="w-full h-32 object-cover"
+          />
         )}
         <button
           className="absolute right-3 top-3 z-10 bg-white rounded-full p-1.5 shadow-sm"
@@ -124,7 +157,9 @@ function HomePage() {
               }
               setRecipes((current) =>
                 current.map((item) =>
-                  item.id === recipe.id ? { ...item, isFavorite: item.isFavorite ? 0 : 1 } : item
+                  item.id === recipe.id
+                    ? { ...item, isFavorite: item.isFavorite ? 0 : 1 }
+                    : item
                 )
               );
             } catch (err) {
@@ -134,17 +169,26 @@ function HomePage() {
         >
           <IonIcon
             icon={recipe.isFavorite ? heart : heartOutline}
-            style={{ fontSize: '1.1rem', color: recipe.isFavorite ? '#e0245e' : '#9ca3af' }}
+            style={{
+              fontSize: '1.1rem',
+              color: recipe.isFavorite ? '#e0245e' : '#9ca3af',
+            }}
           />
         </button>
 
         <div className="p-3">
-          <h4 className="text-base font-semibold text-gray-900 leading-snug">{recipe.title}</h4>
+          <h4 className="text-base font-semibold text-gray-900 leading-snug">
+            {recipe.title}
+          </h4>
           {recipe.categoryName && (
-            <p className="text-xs uppercase tracking-wide text-blue-600 font-semibold mt-0.5">{recipe.categoryName}</p>
+            <p className="text-xs uppercase tracking-wide text-blue-600 font-semibold mt-0.5">
+              {recipe.categoryName}
+            </p>
           )}
           <p className="text-sm text-gray-500 mt-2 line-clamp-2">
-            {recipe.description || recipe.instructions?.slice(0, 100) || 'Sem descrição disponível.'}
+            {recipe.description ||
+              recipe.instructions?.slice(0, 100) ||
+              'Sem descrição disponível.'}
           </p>
           <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-400">
             {recipe.servings && <span>{recipe.servings} porções</span>}
@@ -164,10 +208,16 @@ function HomePage() {
   return (
     <IonPage>
       <IonHeader className="shadow-none">
-        <IonToolbar style={{ '--background': '#ffffff', '--border-color': '#f3f4f6' }}>
+        <IonToolbar
+          style={{ '--background': '#ffffff', '--border-color': '#f3f4f6' }}
+        >
           <IonTitle className="font-bold text-gray-900">CookingBook</IonTitle>
           <IonButtons slot="end">
-            <IonButton fill="clear" onClick={() => navigate('/favorites')} title="Favoritos">
+            <IonButton
+              fill="clear"
+              onClick={() => navigate('/favorites')}
+              title="Favoritos"
+            >
               <IonIcon icon={heartSharp} style={{ color: '#e0245e' }} />
             </IonButton>
             <IonButton fill="clear" onClick={handleLogout} title="Sair">
@@ -182,8 +232,7 @@ function HomePage() {
         fullscreen
         style={{ '--background': '#f9fafb', '--padding-bottom': '140px' }}
       >
-        <div className="max-w-5xl mx-auto px-4 sm:px-6" style={{ paddingBottom: '120px' }}>
-
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
           {/* Search */}
           <div className="mb-4 mt-2">
             <IonSearchbar
@@ -207,8 +256,8 @@ function HomePage() {
                 type="button"
                 onClick={() => setSelectedCategory('Todos')}
                 className={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${selectedCategory === 'Todos'
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
                   }`}
               >
                 Todos
@@ -219,8 +268,8 @@ function HomePage() {
                   type="button"
                   onClick={() => setSelectedCategory(category.name)}
                   className={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${selectedCategory === category.name
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
                     }`}
                 >
                   {category.name}
@@ -232,7 +281,10 @@ function HomePage() {
                   onClick={() => setShowAllCategories((prev) => !prev)}
                   className="rounded-full px-3 py-1.5 text-sm font-medium border bg-white text-gray-500 border-gray-200 hover:border-blue-300 flex items-center gap-1 transition-colors"
                 >
-                  <IonIcon icon={showAllCategories ? chevronUp : chevronDown} style={{ fontSize: '0.9rem' }} />
+                  <IonIcon
+                    icon={showAllCategories ? chevronUp : chevronDown}
+                    style={{ fontSize: '0.9rem' }}
+                  />
                 </button>
               )}
             </div>
@@ -240,18 +292,26 @@ function HomePage() {
 
           {/* Recipe Sections */}
           {loading ? (
-            <div className="rounded-2xl bg-white p-6 text-center text-gray-400 text-sm">Carregando receitas...</div>
+            <div className="rounded-2xl bg-white p-6 text-center text-gray-400 text-sm">
+              Carregando receitas...
+            </div>
           ) : (
             <div className="space-y-8">
               {categorySections.length === 0 && uncategorized.length === 0 ? (
-                <div className="rounded-2xl bg-white p-6 text-center text-gray-400 text-sm">Nenhuma receita encontrada.</div>
+                <div className="rounded-2xl bg-white p-6 text-center text-gray-400 text-sm">
+                  Nenhuma receita encontrada.
+                </div>
               ) : (
                 <>
                   {categorySections.map((section) => (
                     <div key={section.name}>
                       <div className="mb-3">
-                        <h4 className="text-base font-semibold text-gray-800">{section.name}</h4>
-                        <p className="text-xs text-gray-400">{section.recipes.length} receita(s)</p>
+                        <h4 className="text-base font-semibold text-gray-800">
+                          {section.name}
+                        </h4>
+                        <p className="text-xs text-gray-400">
+                          {section.recipes.length} receita(s)
+                        </p>
                       </div>
                       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                         {section.recipes.map(renderRecipeCard)}
@@ -261,8 +321,12 @@ function HomePage() {
                   {uncategorized.length > 0 && (
                     <div>
                       <div className="mb-3">
-                        <h4 className="text-base font-semibold text-gray-800">Sem categoria</h4>
-                        <p className="text-xs text-gray-400">Receitas sem categoria definida.</p>
+                        <h4 className="text-base font-semibold text-gray-800">
+                          Sem categoria
+                        </h4>
+                        <p className="text-xs text-gray-400">
+                          Receitas sem categoria definida.
+                        </p>
                       </div>
                       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                         {uncategorized.map(renderRecipeCard)}
@@ -275,29 +339,26 @@ function HomePage() {
           )}
         </div>
 
-        {/* FAB */}
-        <IonFab
-          vertical="bottom"
-          horizontal="end"
-          slot="fixed"
-          style={{ right: 20, bottom: 24, zIndex: 100 }}
+        {/* FAB - botão flutuante + */}
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="fixed bottom-8 right-6 z-50 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-colors active:scale-95"
+          style={{ boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)' }}
         >
-          <IonFabButton
-            onClick={() => setShowCreateModal(true)}
-            style={{
-              '--background': '#2563eb',
-              '--color': '#ffffff',
-              '--box-shadow': '0 4px 12px rgba(37, 99, 235, 0.4)',
-            }}
-          >
-            <IonIcon icon={add} size="large" />
-          </IonFabButton>
-        </IonFab>
+          <IonIcon icon={add} style={{ fontSize: '1.8rem' }} />
+        </button>
 
-        {/* Create Modal */}
-        <IonModal isOpen={showCreateModal} onDidDismiss={() => setShowCreateModal(false)} breakpoints={[0, 1]} initialBreakpoint={1}>
+        {/* Modal de criação */}
+        <IonModal
+          isOpen={showCreateModal}
+          onDidDismiss={() => setShowCreateModal(false)}
+          breakpoints={[0, 1]}
+          initialBreakpoint={1}
+        >
           <div className="p-6 space-y-3">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Nova Receita</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Nova Receita
+            </h3>
             <button
               onClick={chooseVideo}
               className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 bg-white hover:bg-blue-50 hover:border-blue-300 text-sm font-medium text-gray-700 transition-colors"
@@ -318,22 +379,6 @@ function HomePage() {
             </button>
           </div>
         </IonModal>
-
-        {/* Video URL Alert */}
-        <IonAlert
-          isOpen={showVideoAlert}
-          onDidDismiss={() => setShowVideoAlert(false)}
-          header="Analisar vídeo"
-          inputs={[{
-            name: 'videoUrl',
-            type: 'url',
-            placeholder: 'https://youtube.com/watch?v=...'
-          }]}
-          buttons={[
-            { text: 'Cancelar', role: 'cancel', handler: () => setShowVideoAlert(false) },
-            { text: 'Analisar', handler: (data) => submitVideo(data.videoUrl || '') }
-          ]}
-        />
       </IonContent>
     </IonPage>
   );
